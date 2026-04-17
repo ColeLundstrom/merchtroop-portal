@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Merch Troop</title>
+  <style>
+    :root {
+      --bg:      #0a0e17;
+      --surface: #111827;
+      --border:  rgba(255,255,255,.08);
+      --text:    #e8edf5;
+      --muted:   #64748b;
+      --brand:   #ff9100;
+      --red:     #ef4444;
+      --yellow:  #f59e0b;
+      --blue:    #3b82f6;
+      --green:   #22c55e;
+      --r:       10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* ── Layout ─────────────────────────── */
+    .shell { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+
+    /* ── Header ─────────────────────────── */
+    header {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0 0;
+    }
+    .hRow {
+      display: flex; align-items: center; gap: 12px;
+      padding-bottom: 12px;
+    }
+    .brand { font-size: 18px; font-weight: 800; color: var(--brand); }
+    .hSpacer { flex: 1; }
+    .hBtn {
+      font-size: 12px; font-weight: 600; padding: 6px 12px;
+      border-radius: 6px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); cursor: pointer;
+      font-family: inherit; transition: all .12s;
+    }
+    .hBtn:hover { color: var(--text); border-color: rgba(255,255,255,.18); }
+    .hBtn.primary { background: var(--brand); color: #000; border-color: transparent; }
+
+    /* KPI row */
+    .kpis {
+      display: flex; gap: 20px; padding: 0 0 12px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .kpi { display: flex; flex-direction: column; min-width: 0; }
+    .kpiVal { font-size: 20px; font-weight: 800; color: var(--green); line-height: 1.2; }
+    .kpiVal.red { color: var(--red); }
+    .kpiVal.yellow { color: var(--yellow); }
+    .kpiVal.dim { color: var(--muted); }
+    .kpiLbl { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+    /* ── Tabs ───────────────────────────── */
+    .tabs {
+      display: flex; gap: 0; border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      font-size: 14px; font-weight: 600; padding: 10px 18px;
+      border: none; background: transparent; color: var(--muted);
+      cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; font-family: inherit; transition: color .12s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.on { color: var(--brand); border-bottom-color: var(--brand); }
+    .tabBadge {
+      font-size: 10px; font-weight: 700; padding: 1px 6px;
+      border-radius: 99px; background: rgba(239,68,68,.15);
+      color: var(--red); margin-left: 6px; vertical-align: middle;
+    }
+
+    /* ── Filter row ─────────────────────── */
+    .filters {
+      display: flex; gap: 6px; padding: 12px 0;
+      align-items: center; flex-wrap: wrap;
+    }
+    .chip {
+      font-size: 12px; font-weight: 600; padding: 5px 14px;
+      border-radius: 99px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); cursor: pointer;
+      font-family: inherit; transition: all .12s;
+    }
+    .chip:hover { color: var(--text); border-color: rgba(255,255,255,.18); }
+    .chip.on { background: rgba(255,145,0,.12); border-color: rgba(255,145,0,.45); color: var(--text); }
+    .searchBox {
+      margin-left: auto; border: 1px solid var(--border);
+      background: rgba(255,255,255,.03); color: var(--text);
+      border-radius: 8px; padding: 6px 12px; font-size: 13px; width: 160px;
+      font-family: inherit;
+    }
+    .searchBox::placeholder { color: var(--muted); }
+    .searchBox:focus { outline: none; border-color: rgba(255,255,255,.2); }
+
+    /* ── Content ────────────────────────── */
+    main { padding: 8px 0 80px; }
+    .pane { display: none; }
+    .pane.on { display: block; }
+
+    /* Section labels */
+    .secLabel {
+      font-size: 11px; font-weight: 800; letter-spacing: .8px;
+      text-transform: uppercase; color: var(--muted);
+      padding: 16px 0 8px; display: flex; align-items: center; gap: 8px;
+    }
+    .secDot { width: 7px; height: 7px; border-radius: 99px; }
+    .secDot.red { background: var(--red); }
+    .secDot.yellow { background: var(--yellow); }
+    .secDot.blue { background: var(--blue); }
+    .secCnt {
+      font-size: 10px; font-weight: 700; padding: 1px 7px;
+      border-radius: 99px; background: rgba(255,255,255,.06);
+    }
+
+    /* ── Task card ──────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      margin-bottom: 6px;
+      overflow: hidden;
+      transition: border-color .15s;
+      position: relative;
+    }
+    .card:hover { border-color: rgba(255,255,255,.14); }
+    .card::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; border-radius: 3px 0 0 3px;
+    }
+    .card.p-urgent::before { background: var(--red); }
+    .card.p-attention::before { background: var(--yellow); }
+    .card.p-normal::before { background: var(--blue); }
+
+    /* Card summary row (always visible) */
+    .cardHead {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px 14px 20px; cursor: pointer; user-select: none;
+    }
+    .cardInfo { flex: 1; min-width: 0; }
+    .cardTitle {
+      font-size: 15px; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .cardSub {
+      font-size: 13px; color: var(--muted); margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .cardRight { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .cardAmt {
+      font-size: 14px; font-weight: 800; color: var(--green);
+      white-space: nowrap;
+    }
+    .cardAmt.big { font-size: 16px; }
+    .cardChevron {
+      font-size: 10px; color: var(--muted); transition: transform .15s;
+      width: 16px; text-align: center;
+    }
+    .card.open .cardChevron { transform: rotate(90deg); }
+
+    /* Badges inline */
+    .badge {
+      font-size: 11px; font-weight: 700; padding: 2px 8px;
+      border-radius: 4px; white-space: nowrap;
+    }
+    .badge.sla-overdue { background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.35); color: #fca5a5; }
+    .badge.sla-dueSoon { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.35); color: #fcd34d; }
+    .badge.wait-hot { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; }
+    .badge.wait-warm { background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.3); color: #fcd34d; }
+    .badge.assigned { background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.3); color: #86efac; }
+    .badge.flagged { background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.35); color: #fca5a5; }
+    .badge.pay { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; }
+
+    /* ── Expanded detail ────────────────── */
+    .cardBody {
+      border-top: 1px solid var(--border);
+      padding: 16px 16px 16px 20px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+
+    /* Pipeline stepper */
+    .pipe { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; }
+    .pipeStep {
+      font-size: 11px; padding: 3px 8px; border-radius: 4px; white-space: nowrap;
+    }
+    .pipeStep.done { color: rgba(100,116,139,.4); }
+    .pipeStep.cur { color: var(--text); background: rgba(255,145,0,.14); border: 1px solid rgba(255,145,0,.4); font-weight: 700; }
+    .pipeStep.todo { color: rgba(100,116,139,.5); }
+    .pipeArrow { font-size: 10px; color: rgba(100,116,139,.3); padding: 0 1px; }
+
+    /* Notes */
+    .notes { font-size: 13px; color: var(--muted); white-space: pre-wrap; line-height: 1.5; }
+
+    /* Quick links */
+    .qlinks { display: flex; gap: 6px; flex-wrap: wrap; }
+    .qlink {
+      font-size: 12px; padding: 5px 12px; border-radius: 6px;
+      border: 1px solid rgba(59,130,246,.3); background: rgba(59,130,246,.06);
+      color: #93c5fd; text-decoration: none; transition: background .12s;
+    }
+    .qlink:hover { background: rgba(59,130,246,.14); }
+
+    /* Action buttons row */
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .actBtn {
+      font-size: 12px; font-weight: 600; padding: 6px 14px;
+      border-radius: 6px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); cursor: pointer;
+      font-family: inherit; transition: all .12s;
+    }
+    .actBtn:hover { color: var(--text); background: rgba(255,255,255,.05); }
+    .actBtn.claim { border-color: rgba(59,130,246,.35); color: #93c5fd; background: rgba(59,130,246,.08); }
+    .actBtn.done { border-color: rgba(34,197,94,.35); color: #86efac; background: rgba(34,197,94,.06); font-weight: 700; }
+    .actBtn.done:hover { background: rgba(34,197,94,.14); }
+    .actBtn.send { border-color: rgba(255,145,0,.4); color: var(--brand); background: rgba(255,145,0,.08); font-weight: 700; }
+    .actBtn.send:hover { background: rgba(255,145,0,.16); }
+    .actBtn.danger { border-color: rgba(239,68,68,.3); color: #fca5a5; }
+    .actSpacer { flex: 1; }
+
+    /* ── Draft/Message zone ──────────────── */
+    .msgZone {
+      border: 1px solid rgba(255,145,0,.2); border-radius: 8px;
+      padding: 14px; background: rgba(255,145,0,.03);
+    }
+    .msgLabel {
+      font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--brand); margin-bottom: 10px;
+    }
+    .msgTabs { display: flex; gap: 4px; margin-bottom: 10px; }
+    .msgTab {
+      font-size: 12px; padding: 4px 10px; border-radius: 4px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); cursor: pointer; font-family: inherit;
+    }
+    .msgTab.on { background: rgba(255,145,0,.12); border-color: rgba(255,145,0,.4); color: var(--brand); }
+    .msgInput {
+      width: 100%; border: 1px solid var(--border);
+      background: rgba(255,255,255,.03); color: var(--text);
+      border-radius: 6px; padding: 10px 12px; font-size: 13px;
+      font-family: inherit; resize: vertical; min-height: 60px; line-height: 1.5;
+    }
+    .msgInput:focus { outline: none; border-color: rgba(255,255,255,.2); }
+    .msgActions { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+    .msgStatus { font-size: 12px; color: var(--muted); margin-left: 8px; }
+    .msgStatus.ok { color: var(--green); }
+    .msgStatus.err { color: var(--red); }
+    .msgSpinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.1); border-top-color: var(--brand);
+      border-radius: 99px; animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Complete row ───────────────────── */
+    .completeRow { display: flex; gap: 8px; align-items: flex-start; }
+    .completeInput {
+      flex: 1; border: 1px solid var(--border);
+      background: rgba(255,255,255,.03); color: var(--text);
+      border-radius: 6px; padding: 8px 12px; font-size: 13px;
+      font-family: inherit; resize: none; min-height: 36px;
+    }
+    .completeInput::placeholder { color: var(--muted); }
+    .completeInput:focus { outline: none; border-color: rgba(255,255,255,.2); }
+
+    /* ── Edit form ──────────────────────── */
+    .editForm { display: flex; flex-direction: column; gap: 10px; }
+    .editRow { display: flex; align-items: center; gap: 10px; }
+    .editLbl { font-size: 12px; color: var(--muted); width: 70px; flex-shrink: 0; }
+    .editInput {
+      flex: 1; border: 1px solid var(--border);
+      background: rgba(255,255,255,.03); color: var(--text);
+      border-radius: 6px; padding: 7px 10px; font-size: 13px;
+      font-family: inherit;
+    }
+    .editInput:focus { outline: none; border-color: rgba(255,255,255,.2); }
+    .editTextarea {
+      width: 100%; border: 1px solid var(--border);
+      background: rgba(255,255,255,.03); color: var(--text);
+      border-radius: 6px; padding: 8px 10px; font-size: 13px;
+      font-family: inherit; resize: vertical; min-height: 60px;
+    }
+    .editTextarea:focus { outline: none; border-color: rgba(255,255,255,.2); }
+
+    /* ── History ────────────────────────── */
+    .histDay { margin-bottom: 20px; }
+    .histDate {
+      font-size: 11px; font-weight: 800; letter-spacing: .6px;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 8px; padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .histItem {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 10px 14px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--r);
+      border-left: 3px solid var(--green); margin-bottom: 4px;
+    }
+    .histCheck { color: var(--green); font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .histInfo { flex: 1; min-width: 0; }
+    .histTitle { font-size: 14px; font-weight: 600; }
+    .histMeta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .histNote { font-size: 12px; color: rgba(233,238,245,.5); margin-top: 3px; font-style: italic; }
+    .histTime { font-size: 11px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+
+    /* ── Events ─────────────────────────── */
+    .evCard {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 16px; margin-bottom: 8px;
+    }
+    .evCard.past { opacity: .5; }
+    .evTop { display: flex; gap: 14px; align-items: flex-start; }
+    .evDate {
+      display: flex; flex-direction: column; align-items: center;
+      background: rgba(255,145,0,.08); border: 1px solid rgba(255,145,0,.2);
+      border-radius: 8px; padding: 6px 10px; min-width: 56px;
+    }
+    .evMonth { font-size: 10px; font-weight: 800; color: var(--brand); letter-spacing: .5px; }
+    .evDay { font-size: 22px; font-weight: 800; line-height: 1.1; }
+    .evDow { font-size: 10px; color: var(--muted); }
+    .evInfo { flex: 1; }
+    .evName { font-size: 15px; font-weight: 700; }
+    .evClient { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .evBadge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .3px; padding: 2px 7px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+    .evBadge.paid { background: rgba(34,197,94,.15); color: #86efac; border: 1px solid rgba(34,197,94,.3); }
+    .evBadge.unpaid { background: rgba(251,191,36,.12); color: #fbbf24; border: 1px solid rgba(251,191,36,.3); }
+    .evMeta { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; flex-direction: column; gap: 2px; }
+    .evStaff { margin-top: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .evDot {
+      width: 28px; height: 28px; border-radius: 99px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700;
+    }
+    .evDot.filled { background: rgba(34,197,94,.15); border: 1px solid rgba(34,197,94,.3); color: #86efac; }
+    .evDot.empty { background: rgba(255,255,255,.04); border: 1px solid var(--border); color: var(--muted); }
+    .evSpots { font-size: 12px; }
+    .evSpots.open { color: var(--green); }
+    .evSpots.low { color: var(--yellow); }
+    .evSpots.full { color: var(--muted); }
+
+    /* ── Empty state ────────────────────── */
+    .empty {
+      text-align: center; color: var(--muted); padding: 60px 20px;
+    }
+    .empty strong { display: block; font-size: 20px; color: var(--green); margin-bottom: 6px; }
+
+    /* ── Toast ──────────────────────────── */
+    .toasts { position: fixed; bottom: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 16px; font-size: 13px;
+      color: var(--text); box-shadow: 0 4px 20px rgba(0,0,0,.4);
+      animation: slideIn .2s ease-out;
+    }
+    .toast.ok { border-color: rgba(34,197,94,.3); }
+    .toast.err { border-color: rgba(239,68,68,.3); color: #fca5a5; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } }
+
+    /* ── Modals ─────────────────────────── */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 50; }
+    .modal {
+      position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%);
+      width: min(460px, 94vw); background: #131e30;
+      border: 1px solid rgba(255,255,255,.12); border-radius: 14px;
+      padding: 22px; z-index: 51; display: flex; flex-direction: column; gap: 12px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal h3 { font-size: 16px; font-weight: 700; }
+    .modal p { font-size: 13px; color: var(--muted); }
+    .mLabel { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: -6px; }
+    .mInput {
+      width: 100%; border: 1px solid var(--border);
+      background: rgba(255,255,255,.04); color: var(--text);
+      border-radius: 6px; padding: 10px 12px; font-size: 14px;
+      font-family: inherit; outline: none;
+    }
+    .mInput:focus { border-color: rgba(255,255,255,.2); }
+    .mInput::placeholder { color: var(--muted); }
+    .mTextarea {
+      width: 100%; border: 1px solid var(--border);
+      background: rgba(255,255,255,.04); color: var(--text);
+      border-radius: 6px; padding: 10px 12px; font-size: 14px;
+      font-family: inherit; outline: none; min-height: 80px; resize: vertical;
+    }
+    .mTextarea:focus { border-color: rgba(255,255,255,.2); }
+    .mTextarea::placeholder { color: var(--muted); }
+    .mRow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .mSelect {
+      width: 100%; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text);
+      border-radius: 6px; padding: 10px 12px; font-size: 14px;
+      font-family: inherit; outline: none; cursor: pointer;
+    }
+    .mActions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+
+    /* ── Snooze popover ─────────────────── */
+    .snoozeMenu {
+      position: absolute; right: 16px; bottom: calc(100% + 4px);
+      background: #1a2540; border: 1px solid rgba(255,255,255,.14);
+      border-radius: 8px; padding: 6px; z-index: 30; min-width: 130px;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .snoozeOpt {
+      font-size: 13px; padding: 7px 10px; border-radius: 6px;
+      color: var(--text); cursor: pointer; border: none;
+      background: transparent; text-align: left; font-family: inherit;
+    }
+    .snoozeOpt:hover { background: rgba(255,255,255,.06); }
+
+    /* ── Mobile ─────────────────────────── */
+    @media (max-width: 600px) {
+      .shell { padding: 0 12px; }
+      .kpis { gap: 14px; }
+      .cardTitle { font-size: 14px; }
+      .searchBox { width: 120px; }
+      .mRow { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="shell">
+    <div class="hRow">
+      <div class="brand">Merch Troop</div>
+      <div class="hSpacer"></div>
+      <button class="hBtn" onclick="syncGhl()" id="syncBtn">Sync</button>
+      <button class="hBtn primary" onclick="showAddModal()">+ Task</button>
+      <button class="hBtn" onclick="logout()" title="Sign out">Out</button>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="kpiVal" id="kPipeline">-</div><div class="kpiLbl">pipeline</div></div>
+      <div class="kpi"><div class="kpiVal red" id="kOverdue">-</div><div class="kpiLbl">overdue</div></div>
+      <div class="kpi"><div class="kpiVal yellow" id="kFollowUps">-</div><div class="kpiLbl">follow-ups</div></div>
+      <div class="kpi"><div class="kpiVal dim" id="kEvents">-</div><div class="kpiLbl">events</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" onclick="switchTab('tasks',this)">Tasks<span class="tabBadge" id="tasksBadge" style="display:none">0</span></button>
+      <button class="tab" onclick="switchTab('events',this)">Events</button>
+      <button class="tab" onclick="switchTab('history',this)">Done</button>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <main>
+    <!-- Tasks pane -->
+    <div class="pane on" id="paneTasks">
+      <div class="filters" id="filterBar">
+        <button class="chip on" onclick="setFilter('all',this)">All</button>
+        <button class="chip" onclick="setFilter('urgent',this)">Urgent</button>
+        <button class="chip" onclick="setFilter('mine',this)">Mine</button>
+        <button class="chip" onclick="setFilter('unassigned',this)">Open</button>
+        <input class="searchBox" placeholder="Search..." oninput="searchQ=this.value;render()">
+      </div>
+      <div id="taskList"></div>
+      <div class="empty" id="emptyTasks" style="display:none">
+        <strong>All clear.</strong>
+        Nothing needs attention right now.
+      </div>
+    </div>
+
+    <!-- Events pane -->
+    <div class="pane" id="paneEvents">
+      <div class="filters">
+        <button class="chip on" onclick="setEvFilter('upcoming',this)">Upcoming</button>
+        <button class="chip" onclick="setEvFilter('all',this)">All</button>
+        <div style="flex:1"></div>
+        <button class="hBtn primary" onclick="showAddEventModal()">+ Event</button>
+      </div>
+      <div id="eventList"></div>
+      <div class="empty" id="emptyEvents" style="display:none">
+        <strong>No events.</strong>
+        Events appear when invoices are paid in GHL.
+      </div>
+    </div>
+
+    <!-- History pane -->
+    <div class="pane" id="paneHistory">
+      <div id="historyContent"></div>
+      <div class="empty" id="emptyHistory" style="display:none">
+        <strong>No completed tasks yet.</strong>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Add task modal -->
+<div id="mAdd" style="display:none">
+  <div class="overlay" onclick="closeModals()"></div>
+  <div class="modal">
+    <h3>Add Task</h3>
+    <div class="mLabel">Contact name</div>
+    <input class="mInput" id="addContact" placeholder="e.g. Sarah M.">
+    <div class="mLabel">Job</div>
+    <input class="mInput" id="addJob" placeholder="e.g. 100 black hoodies, DTF front">
+    <div class="mRow">
+      <div>
+        <div class="mLabel">Type</div>
+        <select class="mSelect" id="addStage">
+          <option value="follow_up_lead">Follow up lead</option>
+          <option value="send_estimate">Send estimate</option>
+          <option value="follow_up_estimate">Follow up estimate</option>
+          <option value="order_blanks">Order blanks</option>
+          <option value="confirm_art">Confirm art</option>
+          <option value="schedule_production">Schedule production</option>
+          <option value="qc_pack">QC + pack</option>
+          <option value="ship_deliver">Ship / deliver</option>
+        </select>
+      </div>
+      <div>
+        <div class="mLabel">Job type</div>
+        <select class="mSelect" id="addJobType">
+          <option value="order">Order</option>
+          <option value="event">Event</option>
+        </select>
+      </div>
+    </div>
+    <div class="mRow">
+      <div><div class="mLabel">Amount ($)</div><input class="mInput" id="addAmount" type="number" placeholder="0"></div>
+      <div><div class="mLabel">Due date</div><input class="mInput" id="addDue" type="date"></div>
+    </div>
+    <div class="mLabel">Notes</div>
+    <textarea class="mTextarea" id="addNotes" placeholder="Details..."></textarea>
+    <div class="mActions">
+      <button class="hBtn" onclick="closeModals()">Cancel</button>
+      <button class="hBtn primary" onclick="submitAdd()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add event modal -->
+<div id="mAddEvent" style="display:none">
+  <div class="overlay" onclick="closeModals()"></div>
+  <div class="modal">
+    <h3>Add Event</h3>
+    <div class="mLabel">Customer</div>
+    <input class="mInput" id="aeContact" placeholder="e.g. Andrea B.">
+    <div class="mLabel">Event name</div>
+    <input class="mInput" id="aeEventName" placeholder="e.g. Century City Live Print">
+    <div class="mRow">
+      <div><div class="mLabel">Date</div><input class="mInput" id="aeDate" type="date"></div>
+      <div><div class="mLabel">Type</div><input class="mInput" id="aeType" placeholder="Live screen print"></div>
+    </div>
+    <div class="mRow">
+      <div><div class="mLabel">Start</div><input class="mInput" id="aeStart" type="time" value="10:00"></div>
+      <div><div class="mLabel">End</div><input class="mInput" id="aeEnd" type="time" value="18:00"></div>
+    </div>
+    <div class="mLabel">Location</div>
+    <input class="mInput" id="aeLocation" placeholder="Venue name">
+    <div class="mLabel">Address</div>
+    <input class="mInput" id="aeAddress" placeholder="Full address">
+    <div class="mRow">
+      <div><div class="mLabel">Staff needed</div><input class="mInput" id="aeStaff" type="number" value="2" min="1"></div>
+      <div><div class="mLabel">Amount ($)</div><input class="mInput" id="aeAmount" type="number" placeholder="0"></div>
+    </div>
+    <div class="mLabel">Notes</div>
+    <textarea class="mTextarea" id="aeNotes" placeholder="Details..."></textarea>
+    <div class="mActions">
+      <button class="hBtn" onclick="closeModals()">Cancel</button>
+      <button class="hBtn primary" onclick="submitAddEvent()">Add Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- Complete modal -->
+<div id="mComplete" style="display:none">
+  <div class="overlay" onclick="closeModals()"></div>
+  <div class="modal">
+    <h3>Mark Done</h3>
+    <p id="mCompleteDesc"></p>
+    <textarea class="mTextarea" id="mCompleteNote" placeholder="Tracking #, order #, or what you did (optional)"></textarea>
+    <div class="mActions">
+      <button class="hBtn" onclick="closeModals()">Cancel</button>
+      <button class="actBtn done" onclick="submitComplete()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────
+let tasks = [], coldTasks = [], history = [], events = [];
+let me = localStorage.getItem('portalUser') || 'Cole';
+let activeTab = 'tasks';
+let activeFilter = 'all';
+let evFilter = 'upcoming';
+let searchQ = '';
+let expandedId = null;
+let editingId = null;
+let completingId = null;
+let snoozeOpenId = null;
+
+const PIPES = {
+  order: ['follow_up_lead','send_estimate','follow_up_estimate','order_blanks','confirm_art','schedule_production','qc_pack','ship_deliver'],
+  event: ['follow_up_lead','send_estimate','follow_up_estimate','confirm_event','order_event_supplies','event_production','pack_event_kit'],
+};
+const LABELS = {
+  follow_up_lead:'Follow up', send_estimate:'Send estimate', follow_up_estimate:'Follow up estimate',
+  order_blanks:'Order blanks', confirm_art:'Confirm art', schedule_production:'Schedule production',
+  qc_pack:'QC + pack', ship_deliver:'Ship / deliver', confirm_event:'Confirm event',
+  order_event_supplies:'Order supplies', event_production:'Production', pack_event_kit:'Pack kit',
+};
+
+// ── Helpers ───────────────────────────────────────────────
+function esc(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function authH() {
+  const t = localStorage.getItem('portalToken');
+  return t ? { Authorization: 'Bearer ' + t } : { Authorization: 'Basic ' + btoa('team:MerchTroopTeam') };
+}
+function fmt$(v) { return v >= 1000 ? '$' + (v/1000).toFixed(v%1000===0?0:1) + 'k' : '$' + v; }
+function fmtDate(s) { return s ? new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : ''; }
+function fmtDay(s) {
+  if (!s || s === 'unknown') return 'Unknown';
+  const d = new Date(s+'T12:00:00'), today = new Date(); today.setHours(0,0,0,0);
+  const yest = new Date(today); yest.setDate(yest.getDate()-1);
+  return d >= today ? 'Today' : d >= yest ? 'Yesterday' : d.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+}
+function fmtTime(iso) { return iso ? new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : ''; }
+function waitLabel(iso) {
+  if (!iso) return 'New';
+  const h = (Date.now() - new Date(iso).getTime()) / 3600000;
+  if (h < 1) return 'Just now';
+  if (h < 24) return Math.round(h) + 'h';
+  const d = Math.floor(h / 24);
+  return d + (d===1?' day':' days');
+}
+function waitClass(iso) {
+  if (!iso) return '';
+  const d = (Date.now() - new Date(iso).getTime()) / 86400000;
+  return d >= 3 ? 'wait-hot' : d >= 1 ? 'wait-warm' : '';
+}
+function toast(msg, type='') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+async function post(path, body) {
+  try {
+    const r = await fetch(path, { method:'POST', headers:{...authH(),'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    return await r.json();
+  } catch { toast('Request failed','err'); return null; }
+}
+
+// ── Boot ──────────────────────────────────────────────────
+boot();
+async function boot() {
+  await checkAuth();
+  await Promise.all([loadTasks(), loadHistory(), loadEvents(), loadKpis()]);
+  setInterval(loadTasks, 30000);
+  setInterval(loadEvents, 60000);
+  setInterval(loadKpis, 60000);
+}
+
+// ── Auth ──────────────────────────────────────────────────
+async function checkAuth() {
+  const token = localStorage.getItem('portalToken');
+  if (!token) { window.location.href = '/login'; return; }
+  try {
+    const r = await fetch('/api/auth/me', { headers: authH() });
+    if (!r.ok) { localStorage.removeItem('portalToken'); window.location.href = '/login'; return; }
+    const d = await r.json();
+    if (d.ok) {
+      localStorage.setItem('portalRole', d.role || '');
+      localStorage.setItem('portalUser', d.name || '');
+      me = d.name || 'Cole';
+    }
+  } catch {}
+}
+function logout() {
+  fetch('/api/auth/logout',{method:'POST',headers:authH()});
+  localStorage.removeItem('portalToken');
+  localStorage.removeItem('portalUser');
+  localStorage.removeItem('portalRole');
+  window.location.href = '/login';
+}
+
+// ── Data loading ──────────────────────────────────────────
+async function loadTasks() {
+  try {
+    const [ra, rc] = await Promise.all([
+      fetch('/api/tasks?status=active', { headers: authH() }),
+      fetch('/api/tasks?status=cold', { headers: authH() }),
+    ]);
+    if (!ra.ok) throw new Error();
+    tasks = (await ra.json()).items || [];
+    if (rc.ok) coldTasks = (await rc.json()).items || [];
+    if (activeTab === 'tasks') render();
+  } catch { toast('Could not load tasks','err'); }
+}
+
+async function loadHistory() {
+  try {
+    const r = await fetch('/api/tasks/history', { headers: authH() });
+    history = (await r.json()).items || [];
+    if (activeTab === 'history') renderHistory();
+  } catch {}
+}
+
+async function loadEvents() {
+  try {
+    const r = await fetch('/api/schedule', { headers: authH() });
+    events = (await r.json()).items || [];
+    if (activeTab === 'events') renderEvents();
+  } catch {}
+}
+
+async function loadKpis() {
+  try {
+    const r = await fetch('/api/overview/kpis', { headers: authH() });
+    const d = await r.json();
+    if (!d.ok) return;
+    document.getElementById('kPipeline').textContent = fmt$(d.pipelineRevenue || 0);
+    document.getElementById('kOverdue').textContent = d.overdueCount ?? 0;
+    document.getElementById('kFollowUps').textContent = d.followUpsDueToday ?? 0;
+    document.getElementById('kEvents').textContent = d.eventsThisWeek ?? 0;
+    const ov = document.getElementById('kOverdue');
+    ov.className = 'kpiVal' + (d.overdueCount > 0 ? ' red' : ' dim');
+    const fu = document.getElementById('kFollowUps');
+    fu.className = 'kpiVal' + (d.followUpsDueToday > 0 ? ' yellow' : ' dim');
+  } catch {}
+}
+
+// ── Tabs ──────────────────────────────────────────────────
+function switchTab(tab, el) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('paneTasks').classList.toggle('on', tab==='tasks');
+  document.getElementById('paneEvents').classList.toggle('on', tab==='events');
+  document.getElementById('paneHistory').classList.toggle('on', tab==='history');
+  document.getElementById('filterBar').style.display = tab==='tasks' ? '' : 'none';
+  if (tab==='tasks') render();
+  if (tab==='events') renderEvents();
+  if (tab==='history') renderHistory();
+}
+
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('#filterBar .chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  render();
+}
+
+function setEvFilter(f, el) {
+  evFilter = f;
+  document.querySelectorAll('#paneEvents .chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  renderEvents();
+}
+
+// ── Render tasks ──────────────────────────────────────────
+function render() {
+  let list = tasks.slice();
+  if (activeFilter === 'urgent') list = list.filter(t => t.priority === 'urgent');
+  if (activeFilter === 'mine') list = list.filter(t => t.assignee === me);
+  if (activeFilter === 'unassigned') list = list.filter(t => !t.assignee);
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    list = list.filter(t =>
+      t.contactName?.toLowerCase().includes(q) ||
+      t.taskLabel?.toLowerCase().includes(q) ||
+      t.jobName?.toLowerCase().includes(q)
+    );
+  }
+
+  const urgent = list.filter(t => t.priority === 'urgent');
+  const attention = list.filter(t => t.priority === 'attention');
+  const normal = list.filter(t => t.priority === 'normal');
+
+  let html = '';
+  if (urgent.length) {
+    html += `<div class="secLabel"><span class="secDot red"></span> Do Now <span class="secCnt">${urgent.length}</span></div>`;
+    html += urgent.map(t => renderCard(t)).join('');
+  }
+  if (attention.length) {
+    html += `<div class="secLabel"><span class="secDot yellow"></span> Coming Up <span class="secCnt">${attention.length}</span></div>`;
+    html += attention.map(t => renderCard(t)).join('');
+  }
+  if (normal.length) {
+    html += `<div class="secLabel"><span class="secDot blue"></span> On Deck <span class="secCnt">${normal.length}</span></div>`;
+    html += normal.map(t => renderCard(t)).join('');
+  }
+
+  document.getElementById('taskList').innerHTML = html;
+  document.getElementById('emptyTasks').style.display = list.length ? 'none' : '';
+
+  // Update badge
+  const badge = document.getElementById('tasksBadge');
+  const urgentCount = tasks.filter(t => t.priority === 'urgent').length;
+  badge.style.display = urgentCount > 0 ? '' : 'none';
+  badge.textContent = urgentCount;
+
+  // If expanded, auto-draft if it's a follow-up stage
+  if (expandedId) {
+    const t = tasks.find(x => x.id === expandedId);
+    if (t && ['follow_up_lead','follow_up_estimate'].includes(t.stage)) {
+      const zone = document.getElementById('msg-' + expandedId);
+      if (zone && !zone.dataset.loaded) {
+        zone.dataset.loaded = '1';
+        autoDraft(t);
+      }
+    }
+  }
+}
+
+function renderCard(t) {
+  const exp = expandedId === t.id;
+  const isMe = t.assignee === me;
+
+  // Sub line
+  const sub = [t.contactName, t.dueDate ? fmtDate(t.dueDate) : null].filter(Boolean).join(' \u00B7 ');
+
+  // Amount
+  const amt = t.amount ? `<span class="cardAmt${Number(t.amount)>=1000?' big':''}">${fmt$(Number(t.amount))}</span>` : '';
+
+  // Badges
+  let badges = '';
+  const wc = waitClass(t.waitingSince);
+  if (wc) badges += `<span class="badge ${wc}">${esc(waitLabel(t.waitingSince))}</span>`;
+  if (t.slaText && t.slaStatus !== 'onTrack') badges += `<span class="badge sla-${t.slaStatus}">${esc(t.slaText)}</span>`;
+  if (t.flaggedAt) badges += `<span class="badge flagged">Flagged</span>`;
+  if (t.paymentRequired) badges += `<span class="badge pay">No payment</span>`;
+
+  return `
+<div class="card p-${esc(t.priority)}${exp?' open':''}" id="tc-${esc(t.id)}" style="position:relative">
+  <div class="cardHead" onclick="toggle('${esc(t.id)}')">
+    <div class="cardInfo">
+      <div class="cardTitle">${esc(t.taskLabel)}</div>
+      <div class="cardSub">${esc(sub)}</div>
+    </div>
+    <div class="cardRight">
+      ${badges}
+      ${amt}
+      ${t.assignee ? `<span class="badge assigned">${esc(t.assignee)}</span>` : ''}
+      <span class="cardChevron">\u25B6</span>
+    </div>
+  </div>
+  ${exp ? renderExpanded(t) : ''}
+</div>`;
+}
+
+function renderExpanded(t) {
+  const pipe = PIPES[t.jobType] || PIPES.order;
+  const curIdx = pipe.indexOf(t.stage);
+  const steps = pipe.map((s,i) => {
+    const cls = i < curIdx ? 'done' : i === curIdx ? 'cur' : 'todo';
+    return `<span class="pipeStep ${cls}">${esc(LABELS[s]||s)}</span>${i<pipe.length-1?'<span class="pipeArrow">\u203A</span>':''}`;
+  }).join('');
+
+  const links = (t.quickLinks||[]).map(l =>
+    `<a class="qlink" href="${esc(l.href)}" target="_blank">${esc(l.label)}</a>`
+  ).join('');
+
+  const isFollowUp = ['follow_up_lead','follow_up_estimate'].includes(t.stage);
+  const isMe = t.assignee === me;
+
+  return `
+<div class="cardBody">
+  <div class="pipe">${steps}</div>
+  ${t.notes ? `<div class="notes">${esc(t.notes)}</div>` : ''}
+  ${links ? `<div class="qlinks">${links}</div>` : ''}
+
+  ${isFollowUp ? `
+  <div class="msgZone" id="msg-${esc(t.id)}">
+    <div class="msgLabel">Message</div>
+    <div class="msgTabs">
+      <button class="msgTab on" onclick="switchMsgTab('${esc(t.id)}','sms',this)">SMS</button>
+      <button class="msgTab" onclick="switchMsgTab('${esc(t.id)}','email',this)">Email</button>
+    </div>
+    <textarea class="msgInput" id="msgText-${esc(t.id)}" placeholder="Generating draft..."></textarea>
+    <div class="msgActions">
+      <button class="actBtn send" onclick="sendMsg('${esc(t.id)}')">Send via GHL</button>
+      <button class="actBtn" onclick="copyMsg('${esc(t.id)}')">Copy</button>
+      <button class="actBtn" onclick="redraft('${esc(t.id)}')">Redraft</button>
+      <span class="msgStatus" id="msgStatus-${esc(t.id)}"></span>
+    </div>
+  </div>` : ''}
+
+  ${editingId === t.id ? `
+  <div class="editForm" onclick="event.stopPropagation()">
+    <div class="editRow"><span class="editLbl">Notes</span></div>
+    <textarea class="editTextarea" id="editNotes-${esc(t.id)}">${esc(t.notes||'')}</textarea>
+    <div class="editRow">
+      <span class="editLbl">Due</span>
+      <input class="editInput" type="date" id="editDue-${esc(t.id)}" value="${esc(t.dueDate||'')}">
+    </div>
+    <div class="editRow">
+      <span class="editLbl">Amount</span>
+      <input class="editInput" type="number" id="editAmt-${esc(t.id)}" value="${esc(String(t.amount||''))}" placeholder="0">
+    </div>
+    <div class="actions">
+      <button class="actBtn done" onclick="saveEdit('${esc(t.id)}')">Save</button>
+      <button class="actBtn" onclick="editingId=null;render()">Cancel</button>
+    </div>
+  </div>` : `
+  <button class="actBtn" onclick="editingId='${esc(t.id)}';render();event.stopPropagation()" style="align-self:flex-start">Edit</button>`}
+
+  <div class="actions" style="position:relative">
+    ${t.paymentRequired
+      ? `<button class="actBtn send" onclick="markPaid('${esc(t.id)}',event)">Mark Paid</button>`
+      : !t.assignee
+        ? `<button class="actBtn claim" onclick="claim('${esc(t.id)}')">Claim</button>`
+        : isMe
+          ? `<button class="actBtn" onclick="unclaim('${esc(t.id)}')">Unclaim</button>`
+          : ''
+    }
+    <button class="actBtn" onclick="markCold('${esc(t.id)}',event)">Cold</button>
+    <button class="actBtn" onclick="toggleSnooze('${esc(t.id)}',event)">Snooze</button>
+    <div class="actSpacer"></div>
+    ${!t.paymentRequired ? `<button class="actBtn done" onclick="openComplete('${esc(t.id)}',event)">Done</button>` : ''}
+    ${snoozeOpenId === t.id ? `
+    <div class="snoozeMenu" onclick="event.stopPropagation()">
+      <button class="snoozeOpt" onclick="snooze('${esc(t.id)}',1)">Tomorrow</button>
+      <button class="snoozeOpt" onclick="snooze('${esc(t.id)}',3)">3 days</button>
+      <button class="snoozeOpt" onclick="snooze('${esc(t.id)}',7)">1 week</button>
+    </div>` : ''}
+  </div>
+
+  <div class="completeRow">
+    <input class="completeInput" id="dn-${esc(t.id)}" placeholder="Note (optional)">
+    <button class="actBtn done" onclick="completeInline('${esc(t.id)}')">Done</button>
+  </div>
+</div>`;
+}
+
+// ── Auto-draft ────────────────────────────────────────────
+async function autoDraft(t) {
+  const el = document.getElementById('msgText-' + t.id);
+  if (!el) return;
+  el.value = '';
+  el.placeholder = 'Generating draft...';
+  const status = document.getElementById('msgStatus-' + t.id);
+  if (status) status.innerHTML = '<span class="msgSpinner"></span>';
+
+  const waitDays = t.waitingSince ? (Date.now() - new Date(t.waitingSince).getTime()) / 86400000 : 0;
+  const followUpDay = waitDays < 1.5 ? 1 : waitDays < 3.5 ? 3 : 7;
+
+  try {
+    const r = await post('/api/ai/draft-email', { taskId: t.id, followUpDay });
+    if (r?.ok && r.draft) {
+      el.value = r.draft.smsText || '';
+      el.dataset.sms = r.draft.smsText || '';
+      el.dataset.emailSubject = r.draft.emailSubject || '';
+      el.dataset.emailBody = r.draft.emailBody || '';
+      el.placeholder = 'Edit message before sending...';
+      if (status) status.innerHTML = '<span class="msgStatus ok">Draft ready</span>';
+    } else {
+      el.placeholder = 'Type your message...';
+      if (status) status.innerHTML = '<span class="msgStatus err">Draft failed - type manually</span>';
+    }
+  } catch {
+    el.placeholder = 'Type your message...';
+    if (status) status.innerHTML = '<span class="msgStatus err">Draft error</span>';
+  }
+}
+
+async function redraft(taskId) {
+  const t = tasks.find(x => x.id === taskId);
+  if (t) {
+    const zone = document.getElementById('msg-' + taskId);
+    if (zone) zone.dataset.loaded = '';
+    await autoDraft(t);
+  }
+}
+
+function switchMsgTab(taskId, tab, el) {
+  const textarea = document.getElementById('msgText-' + taskId);
+  if (!textarea) return;
+  document.querySelectorAll(`#msg-${taskId} .msgTab`).forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  if (tab === 'sms') {
+    textarea.value = textarea.dataset.sms || '';
+  } else {
+    const subj = textarea.dataset.emailSubject || '';
+    const body = textarea.dataset.emailBody || '';
+    textarea.value = subj ? `Subject: ${subj}\n\n${body}` : body;
+  }
+}
+
+function copyMsg(taskId) {
+  const el = document.getElementById('msgText-' + taskId);
+  if (el) {
+    navigator.clipboard.writeText(el.value).then(() => toast('Copied','ok'));
+  }
+}
+
+// ── Send via GHL ──────────────────────────────────────────
+async function sendMsg(taskId) {
+  const t = tasks.find(x => x.id === taskId);
+  if (!t) return;
+  const el = document.getElementById('msgText-' + taskId);
+  const status = document.getElementById('msgStatus-' + taskId);
+  const message = el?.value?.trim();
+  if (!message) { toast('Type a message first','err'); return; }
+
+  const contactId = t.sourceContactId || t.contactId || null;
+  if (!contactId) {
+    toast('No GHL contact linked - copy and send manually','err');
+    return;
+  }
+
+  if (status) status.innerHTML = '<span class="msgSpinner"></span> Sending...';
+
+  try {
+    const r = await post('/api/ghl/send-sms', { contactId, message, taskId });
+    if (r?.ok && r?.sent) {
+      if (status) status.innerHTML = '<span class="msgStatus ok">Sent!</span>';
+      toast('Message sent via GHL','ok');
+    } else {
+      if (status) status.innerHTML = `<span class="msgStatus err">Failed: ${r?.error || 'unknown'}</span>`;
+      toast('Send failed: ' + (r?.error || 'unknown'),'err');
+    }
+  } catch(e) {
+    if (status) status.innerHTML = '<span class="msgStatus err">Send error</span>';
+    toast('Send error','err');
+  }
+}
+
+// ── Task actions ──────────────────────────────────────────
+function toggle(id) {
+  expandedId = expandedId === id ? null : id;
+  snoozeOpenId = null;
+  editingId = null;
+  render();
+  if (expandedId) {
+    setTimeout(() => document.getElementById('tc-'+id)?.scrollIntoView({behavior:'smooth',block:'nearest'}), 40);
+  }
+}
+
+async function claim(id) {
+  await post('/api/tasks/accept', { taskId: id, assignee: me });
+  toast(me + ' claimed task','ok');
+  await loadTasks();
+}
+
+async function unclaim(id) {
+  await post('/api/tasks/unclaim', { taskId: id });
+  toast('Unclaimed');
+  await loadTasks();
+}
+
+async function markCold(id, e) {
+  if (e) e.stopPropagation();
+  const r = await post('/api/tasks/set-status', { taskId: id, status: 'cold' });
+  if (r?.ok) { toast('Moved to cold','ok'); await loadTasks(); }
+}
+
+function toggleSnooze(id, e) {
+  e.stopPropagation();
+  snoozeOpenId = snoozeOpenId === id ? null : id;
+  render();
+}
+
+async function snooze(id, days) {
+  snoozeOpenId = null;
+  await post('/api/tasks/snooze', { taskId: id, days });
+  toast('Snoozed ' + days + ' day' + (days>1?'s':''));
+  await loadTasks();
+}
+
+function openComplete(id, e) {
+  if (e) e.stopPropagation();
+  completingId = id;
+  const t = tasks.find(x => x.id === id);
+  document.getElementById('mCompleteDesc').textContent = t ? t.taskLabel + ' \u2014 ' + t.contactName : '';
+  document.getElementById('mCompleteNote').value = '';
+  document.getElementById('mComplete').style.display = '';
+  setTimeout(() => document.getElementById('mCompleteNote').focus(), 50);
+}
+
+async function submitComplete() {
+  if (!completingId) return;
+  const note = document.getElementById('mCompleteNote').value.trim();
+  const r = await post('/api/tasks/complete', { taskId: completingId, note });
+  closeModals();
+  if (r?.nextTask) toast('Done! Next: ' + (LABELS[r.nextTask.stage] || r.nextTask.stage),'ok');
+  else toast('Task complete!','ok');
+  expandedId = null;
+  await Promise.all([loadTasks(), loadHistory()]);
+}
+
+async function completeInline(id) {
+  const note = (document.getElementById('dn-'+id)?.value||'').trim();
+  const r = await post('/api/tasks/complete', { taskId: id, note });
+  if (r?.nextTask) toast('Done! Next: '+(LABELS[r.nextTask.stage]||r.nextTask.stage),'ok');
+  else toast('Task complete!','ok');
+  expandedId = null;
+  await Promise.all([loadTasks(), loadHistory()]);
+}
+
+async function markPaid(id, e) {
+  if (e) e.stopPropagation();
+  const t = tasks.find(x => x.id === id);
+  const ref = window.prompt('Confirm payment for ' + (t?.contactName||id) + '.\nInvoice # (optional):', '');
+  if (ref === null) return;
+  const r = await post('/api/tasks/mark-paid', { taskId: id, invoiceRef: ref || null });
+  if (r?.ok) {
+    toast('Payment confirmed!','ok');
+    await Promise.all([loadTasks(), loadKpis()]);
+  } else toast('Could not mark paid','err');
+}
+
+async function saveEdit(id) {
+  const notes = document.getElementById('editNotes-'+id)?.value ?? '';
+  const dueDate = document.getElementById('editDue-'+id)?.value || null;
+  const amtVal = document.getElementById('editAmt-'+id)?.value;
+  const amount = amtVal ? Number(amtVal) : null;
+  const r = await post('/api/tasks/edit', { taskId: id, notes, dueDate, amount });
+  if (r?.ok) { toast('Updated','ok'); editingId = null; await loadTasks(); }
+  else toast('Save failed','err');
+}
+
+// ── Render history ────────────────────────────────────────
+function renderHistory() {
+  if (!history.length) {
+    document.getElementById('historyContent').innerHTML = '';
+    document.getElementById('emptyHistory').style.display = '';
+    return;
+  }
+  document.getElementById('emptyHistory').style.display = 'none';
+  const groups = {};
+  for (const t of history) {
+    const day = t.completedAt ? t.completedAt.slice(0,10) : 'unknown';
+    if (!groups[day]) groups[day] = [];
+    groups[day].push(t);
+  }
+  document.getElementById('historyContent').innerHTML = Object.entries(groups).map(([day, items]) => `
+    <div class="histDay">
+      <div class="histDate">${fmtDay(day)}</div>
+      ${items.map(t => `
+        <div class="histItem">
+          <div class="histCheck">\u2713</div>
+          <div class="histInfo">
+            <div class="histTitle">${esc(t.taskLabel)}</div>
+            <div class="histMeta">${esc(t.contactName)}${t.assignee ? ' \u00B7 ' + t.assignee : ''}</div>
+            ${t.completionNote ? `<div class="histNote">${esc(t.completionNote)}</div>` : ''}
+          </div>
+          <div class="histTime">${fmtTime(t.completedAt)}</div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+// ── Render events ─────────────────────────────────────────
+function renderEvents() {
+  let list = events.slice();
+  if (evFilter === 'upcoming') list = list.filter(e => !e.isPast);
+  document.getElementById('emptyEvents').style.display = list.length ? 'none' : '';
+  document.getElementById('eventList').innerHTML = list.map(renderEvCard).join('');
+}
+
+function renderEvCard(e) {
+  const d = new Date(e.date + 'T12:00:00');
+  const month = d.toLocaleDateString('en-US',{month:'short'}).toUpperCase();
+  const day = d.getDate();
+  const dow = d.toLocaleDateString('en-US',{weekday:'short'});
+  const filled = e.spotsFilled ?? (e.claims||[]).length;
+  const isFull = e.isFull || filled >= e.staffNeeded;
+
+  const fmt12 = t => {
+    if (!t) return '';
+    const [h,m] = t.split(':').map(Number);
+    return (h%12||12) + (m?':'+String(m).padStart(2,'0'):'') + (h<12?' AM':' PM');
+  };
+
+  const dots = (e.claims||[]).map(c => {
+    const initials = c.name.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return `<div class="evDot filled" title="${esc(c.name)}">${esc(initials)}</div>`;
+  });
+  for (let i = filled; i < e.staffNeeded; i++) dots.push('<div class="evDot empty">+</div>');
+
+  return `
+<div class="evCard${e.isPast?' past':''}">
+  <div class="evTop">
+    <div class="evDate">
+      <div class="evMonth">${esc(month)}</div>
+      <div class="evDay">${day}</div>
+      <div class="evDow">${esc(dow)}</div>
+    </div>
+    <div class="evInfo">
+      <div class="evName">${esc(e.eventName)}</div>
+      <div class="evClient">${esc(e.contactName)}${e.amount?' \u00B7 $'+Number(e.amount).toLocaleString():''}${e.source==='ghl_invoice'?'<span class="evBadge paid">PAID</span>':'<span class="evBadge unpaid">UNPAID</span>'}</div>
+      <div class="evMeta">
+        ${e.address||e.location?`<span>${esc(e.address||e.location)}</span>`:''}
+        ${e.startTime?`<span>${fmt12(e.startTime)} \u2013 ${fmt12(e.endTime)}</span>`:''}
+        ${e.eventType?`<span>${esc(e.eventType)}</span>`:''}
+      </div>
+    </div>
+  </div>
+  <div class="evStaff">
+    ${dots.join('')}
+    <span class="evSpots ${isFull?'full':'open'}">${isFull ? 'Full' : (e.staffNeeded-filled)+' open'}</span>
+  </div>
+  ${e.notes?`<div class="notes" style="margin-top:10px;font-size:12px">${esc(e.notes)}</div>`:''}
+</div>`;
+}
+
+// ── Modals ────────────────────────────────────────────────
+function closeModals() {
+  ['mAdd','mAddEvent','mComplete'].forEach(id => document.getElementById(id).style.display = 'none');
+  completingId = null;
+}
+document.addEventListener('keydown', e => { if (e.key==='Escape') { closeModals(); snoozeOpenId=null; render(); } });
+document.addEventListener('click', () => { if (snoozeOpenId) { snoozeOpenId=null; render(); } });
+
+function showAddModal() {
+  ['addContact','addJob','addAmount','addNotes'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('addDue').value = '';
+  document.getElementById('mAdd').style.display = '';
+  setTimeout(() => document.getElementById('addContact').focus(), 50);
+}
+
+async function submitAdd() {
+  const contact = document.getElementById('addContact').value.trim();
+  if (!contact) { toast('Contact name required','err'); return; }
+  await post('/api/tasks/create', {
+    contactName: contact,
+    jobName: document.getElementById('addJob').value.trim() || contact,
+    stage: document.getElementById('addStage').value,
+    jobType: document.getElementById('addJobType').value,
+    amount: document.getElementById('addAmount').value || null,
+    dueDate: document.getElementById('addDue').value || null,
+    notes: document.getElementById('addNotes').value.trim() || null,
+  });
+  closeModals();
+  toast('Task added','ok');
+  await loadTasks();
+}
+
+function showAddEventModal() {
+  ['aeContact','aeEventName','aeLocation','aeAddress','aeType','aeNotes','aeAmount'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value='';
+  });
+  document.getElementById('aeStaff').value = '2';
+  document.getElementById('aeStart').value = '10:00';
+  document.getElementById('aeEnd').value = '18:00';
+  document.getElementById('aeDate').value = '';
+  document.getElementById('mAddEvent').style.display = '';
+  setTimeout(() => document.getElementById('aeContact').focus(), 50);
+}
+
+async function submitAddEvent() {
+  const contact = document.getElementById('aeContact').value.trim();
+  const date = document.getElementById('aeDate').value;
+  if (!contact) { toast('Contact required','err'); return; }
+  if (!date) { toast('Date required','err'); return; }
+  const r = await post('/api/schedule/add', {
+    contactName: contact,
+    eventName: document.getElementById('aeEventName').value.trim() || contact,
+    date,
+    startTime: document.getElementById('aeStart').value,
+    endTime: document.getElementById('aeEnd').value,
+    location: document.getElementById('aeLocation').value.trim(),
+    address: document.getElementById('aeAddress').value.trim(),
+    eventType: document.getElementById('aeType').value.trim(),
+    staffNeeded: parseInt(document.getElementById('aeStaff').value) || 2,
+    amount: document.getElementById('aeAmount').value || null,
+    notes: document.getElementById('aeNotes').value.trim() || null,
+  });
+  if (!r?.ok) { toast('Failed','err'); return; }
+  closeModals();
+  toast('Event added','ok');
+  await loadEvents();
+}
+
+// ── GHL Sync ──────────────────────────────────────────────
+async function syncGhl() {
+  const btn = document.getElementById('syncBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Syncing...'; }
+  try {
+    const r = await fetch('/api/sync/ghl', { method:'POST', headers: authH() });
+    const d = await r.json();
+    if (d.ok) {
+      toast('Synced: +' + (d.created||0) + ' tasks','ok');
+      await Promise.all([loadTasks(), loadKpis()]);
+    } else toast('Sync failed','err');
+  } catch { toast('Sync error','err'); }
+  if (btn) { btn.disabled = false; btn.textContent = 'Sync'; }
+}
+</script>
+</body>
+</html>

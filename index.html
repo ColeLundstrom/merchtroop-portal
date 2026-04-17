@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Merch Troop</title>
+  <style>
+    :root {
+      --bg:#0a0e17; --surface:#111827; --surface2:#1a2236; --border:rgba(255,255,255,.07);
+      --text:#e8edf5; --muted:#64748b; --brand:#ff9100; --red:#ef4444; --yellow:#f59e0b;
+      --blue:#3b82f6; --green:#22c55e; --r:10px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.5;display:flex;flex-direction:column}
+
+    /* ── Header ───────────────────────── */
+    header{background:var(--bg);border-bottom:1px solid var(--border);padding:0 20px;flex-shrink:0;position:sticky;top:0;z-index:20}
+    .hRow{display:flex;align-items:center;gap:12px;padding:10px 0;flex-wrap:wrap}
+    .brand{font-size:18px;font-weight:800;color:var(--brand)}
+    .hSpacer{flex:1}
+    .hBtn{font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .12s}
+    .hBtn:hover{color:var(--text);border-color:rgba(255,255,255,.18)}
+    .hBtn.primary{background:var(--brand);color:#000;border-color:transparent}
+    .hBtn:disabled{opacity:.5;cursor:default}
+
+    /* KPIs */
+    .kpis{display:flex;gap:20px;padding:0 0 10px;overflow-x:auto}
+    .kpi{display:flex;flex-direction:column}
+    .kpiVal{font-size:20px;font-weight:800;line-height:1.2}
+    .kpiVal.green{color:var(--green)} .kpiVal.red{color:var(--red)} .kpiVal.yellow{color:var(--yellow)} .kpiVal.dim{color:var(--muted)}
+    .kpiLbl{font-size:13px;color:var(--muted);white-space:nowrap}
+
+    /* Nav tabs */
+    .nav{display:flex;gap:0;border-bottom:1px solid var(--border)}
+    .navBtn{font-size:13px;font-weight:600;padding:10px 16px;border:none;background:transparent;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit;transition:color .12s;position:relative}
+    .navBtn:hover{color:var(--text)}
+    .navBtn.on{color:var(--brand);border-bottom-color:var(--brand)}
+    .navBadge{position:absolute;top:6px;right:4px;font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:var(--red);color:#fff;min-width:14px;text-align:center}
+
+    /* ── Layout ───────────────────────── */
+    .shell{max-width:960px;margin:0 auto;padding:0 16px;width:100%}
+    main{flex:1;overflow-y:auto;padding:0 0 80px}
+    .pane{display:none} .pane.on{display:block}
+
+    /* ── Sections ─────────────────────── */
+    .sec{margin-bottom:20px}
+    .secHead{font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);padding:16px 0 8px;display:flex;align-items:center;gap:8px}
+    .secDot{width:7px;height:7px;border-radius:99px}
+    .secDot.red{background:var(--red)} .secDot.yellow{background:var(--yellow)} .secDot.blue{background:var(--blue)} .secDot.green{background:var(--green)}
+    .secCnt{font-size:13px;font-weight:700;padding:1px 7px;border-radius:99px;background:rgba(255,255,255,.06)}
+
+    /* ── Filter chips ─────────────────── */
+    .filters{display:flex;gap:6px;padding:10px 0;align-items:center;flex-wrap:wrap}
+    .chip{font-size:12px;font-weight:600;padding:5px 14px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .12s}
+    .chip:hover{color:var(--text);border-color:rgba(255,255,255,.18)}
+    .chip.on{background:rgba(255,145,0,.12);border-color:rgba(255,145,0,.45);color:var(--text)}
+    .searchBox{margin-left:auto;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text);border-radius:8px;padding:6px 12px;font-size:13px;width:160px;font-family:inherit}
+    .searchBox::placeholder{color:var(--muted)} .searchBox:focus{border-color:rgba(255,255,255,.2)}
+
+    /* ── Task card ─────────────────────── */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;overflow:hidden;transition:border-color .15s;position:relative}
+    .card:hover{border-color:rgba(255,255,255,.14)}
+    .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+    .card.p-urgent::before{background:var(--red)} .card.p-attention::before{background:var(--yellow)} .card.p-normal::before{background:var(--blue)}
+
+    .cardHead{display:grid;grid-template-columns:1fr auto;gap:8px;padding:12px 14px 12px 18px;cursor:pointer;user-select:none;align-items:center}
+    .cardLeft{min-width:0}
+    .cardTitle{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cardSub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+    .cardRight{display:flex;align-items:center;gap:6px;flex-shrink:0}
+    .cardAmt{font-size:14px;font-weight:800;color:var(--green);white-space:nowrap}
+    .cardAmt.big{font-size:16px}
+    .cardChev{font-size:10px;color:var(--muted);transition:transform .15s;width:14px;text-align:center}
+    .card.open .cardChev{transform:rotate(90deg)}
+
+    /* Inline stage bar on card */
+    .cardStage{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap;background:rgba(255,145,0,.1);border:1px solid rgba(255,145,0,.25);color:var(--brand)}
+
+    /* Quick action row (visible without expanding) */
+    .cardQuick{display:flex;gap:6px;padding:0 14px 10px 18px;flex-wrap:wrap}
+
+    /* Badges */
+    .badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+    .badge.sla-overdue{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+    .badge.sla-dueSoon{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fcd34d}
+    .badge.wait-hot{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#fca5a5}
+    .badge.wait-warm{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.25);color:#fcd34d}
+    .badge.assigned{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.25);color:#86efac}
+    .badge.flagged{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+    .badge.pay{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#fca5a5}
+
+    /* ── Expanded card body ────────────── */
+    .cardBody{border-top:1px solid var(--border);padding:16px 14px 16px 18px;display:flex;flex-direction:column;gap:14px;animation:expandIn .15s ease-out}
+    @keyframes expandIn{from{opacity:0;max-height:0}to{opacity:1;max-height:2000px}}
+
+    /* Pipeline stepper */
+    .pipe{display:flex;align-items:center;flex-wrap:wrap;gap:2px}
+    .pipeS{font-size:10px;padding:3px 7px;border-radius:4px;white-space:nowrap}
+    .pipeS.done{color:rgba(100,116,139,.35)} .pipeS.cur{color:var(--text);background:rgba(255,145,0,.14);border:1px solid rgba(255,145,0,.4);font-weight:700} .pipeS.todo{color:rgba(100,116,139,.4)}
+    .pipeA{font-size:9px;color:rgba(100,116,139,.3);padding:0 1px}
+
+    .notes{font-size:13px;color:var(--muted);white-space:pre-wrap;line-height:1.5}
+    .qlinks{display:flex;gap:6px;flex-wrap:wrap}
+    .qlink{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(59,130,246,.25);background:rgba(59,130,246,.05);color:#93c5fd;text-decoration:none;transition:background .12s}
+    .qlink:hover{background:rgba(59,130,246,.12)}
+
+    /* Conversation preview */
+    .convPreview{border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:rgba(255,255,255,.02);max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+    .convMsg{font-size:12px;line-height:1.4;padding:6px 10px;border-radius:8px;max-width:85%}
+    .convMsg.out{background:rgba(255,145,0,.08);border:1px solid rgba(255,145,0,.15);color:var(--text);align-self:flex-end}
+    .convMsg.in{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.15);color:var(--text);align-self:flex-start}
+    .convTime{font-size:13px;color:var(--muted);margin-top:2px}
+    .convLoading{font-size:12px;color:var(--muted);padding:8px}
+
+    /* Message composer */
+    .msgZone{border:1px solid rgba(255,145,0,.2);border-radius:8px;padding:12px;background:rgba(255,145,0,.02)}
+    .msgLabel{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--brand);margin-bottom:8px}
+    .msgTabs{display:flex;gap:4px;margin-bottom:8px}
+    .msgTab{font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit}
+    .msgTab.on{background:rgba(255,145,0,.1);border-color:rgba(255,145,0,.35);color:var(--brand)}
+    .msgInput{width:100%;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text);border-radius:6px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;min-height:50px;line-height:1.4}
+    .msgInput:focus{border-color:rgba(255,255,255,.2)}
+    .msgActions{display:flex;gap:8px;margin-top:8px;align-items:center}
+    .msgStatus{font-size:11px;color:var(--muted);margin-left:8px}
+    .msgStatus.ok{color:var(--green)} .msgStatus.err{color:var(--red)}
+
+    /* Action buttons */
+    .actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+    .actBtn{font-size:11px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .12s}
+    .actBtn:hover{color:var(--text);background:rgba(255,255,255,.04)}
+    .actBtn.claim{border-color:rgba(59,130,246,.3);color:#93c5fd;background:rgba(59,130,246,.06)}
+    .actBtn.done{border-color:rgba(34,197,94,.3);color:#86efac;background:rgba(34,197,94,.05);font-weight:700}
+    .actBtn.done:hover{background:rgba(34,197,94,.12)}
+    .actBtn.send{border-color:rgba(255,145,0,.35);color:var(--brand);background:rgba(255,145,0,.06);font-weight:700}
+    .actBtn.send:hover{background:rgba(255,145,0,.14)}
+    .actSpacer{flex:1}
+
+    /* ── Kanban ────────────────────────── */
+    .kanbanWrap{overflow-x:auto;padding-bottom:16px;-webkit-overflow-scrolling:touch}
+    .kanbanTrack{display:flex;gap:10px;min-width:min-content}
+    .kanbanCol{min-width:200px;max-width:240px;flex-shrink:0}
+    .kanbanHead{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);padding:10px 8px 8px;display:flex;align-items:center;gap:6px}
+    .kanbanCnt{font-size:10px;font-weight:700;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:99px}
+    .kanbanCards{display:flex;flex-direction:column;gap:4px}
+    .kCard{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;transition:border-color .12s}
+    .kCard:hover{border-color:rgba(255,255,255,.14)}
+    .kName{font-size:13px;font-weight:600}
+    .kJob{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .kFoot{display:flex;justify-content:space-between;margin-top:6px;font-size:11px}
+    .kRev{color:var(--green);font-weight:700}
+    .kDue{color:var(--muted)}
+    .kanbanEmpty{font-size:13px;color:rgba(100,116,139,.4);padding:12px 8px}
+
+    /* ── Inbox ─────────────────────────── */
+    .inboxItem{display:flex;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:4px;cursor:pointer;transition:border-color .12s;align-items:center}
+    .inboxItem:hover{border-color:rgba(255,255,255,.14)}
+    .inboxItem.unread{border-left:3px solid var(--brand)}
+    .inboxAvatar{width:36px;height:36px;border-radius:99px;background:rgba(255,145,0,.1);border:1px solid rgba(255,145,0,.2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--brand);flex-shrink:0}
+    .inboxInfo{flex:1;min-width:0}
+    .inboxName{font-size:14px;font-weight:600}
+    .inboxPreview{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+    .inboxTime{font-size:13px;color:var(--muted);white-space:nowrap;flex-shrink:0}
+    .inboxDir{font-size:13px;margin-right:4px}
+
+    /* Thread view */
+    .threadPanel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden}
+    .threadHead{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
+    .threadName{font-size:15px;font-weight:700;flex:1}
+    .threadMsgs{padding:14px;max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+    .threadCompose{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end}
+    .threadInput{flex:1;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;resize:none;min-height:38px;max-height:120px}
+    .threadInput:focus{border-color:rgba(255,255,255,.2)}
+
+    /* ── Events ────────────────────────── */
+    .evCard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px}
+    .evCard.past{opacity:.45}
+    .evTop{display:flex;gap:14px;align-items:flex-start}
+    .evDate{display:flex;flex-direction:column;align-items:center;background:rgba(255,145,0,.08);border:1px solid rgba(255,145,0,.18);border-radius:8px;padding:6px 10px;min-width:54px}
+    .evMo{font-size:10px;font-weight:800;color:var(--brand);letter-spacing:.5px} .evDy{font-size:22px;font-weight:800;line-height:1.1} .evDw{font-size:10px;color:var(--muted)}
+    .evInfo{flex:1;min-width:0}
+    .evName{font-size:15px;font-weight:700} .evClient{font-size:12px;color:var(--muted);margin-top:2px}
+    .evMeta{font-size:12px;color:var(--muted);margin-top:6px;display:flex;flex-direction:column;gap:2px}
+    .evStaff{margin-top:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .evDot{width:28px;height:28px;border-radius:99px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+    .evDot.filled{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#86efac}
+    .evDot.empty{background:rgba(255,255,255,.03);border:1px solid var(--border);color:var(--muted)}
+    .evSpots{font-size:12px} .evSpots.open{color:var(--green)} .evSpots.full{color:var(--muted)}
+
+    /* ── History ───────────────────────── */
+    .histDay{margin-bottom:20px}
+    .histDate{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+    .histItem{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);border-left:3px solid var(--green);margin-bottom:4px}
+    .histInfo{flex:1;min-width:0} .histTitle{font-size:13px;font-weight:600} .histMeta{font-size:11px;color:var(--muted);margin-top:2px}
+    .histNote{font-size:13px;color:rgba(233,238,245,.5);margin-top:3px;font-style:italic}
+    .histTime{font-size:13px;color:var(--muted);white-space:nowrap;flex-shrink:0}
+
+    /* ── Empty / loading ──────────────── */
+    .empty{text-align:center;color:var(--muted);padding:50px 20px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:var(--r);margin:16px 0}
+    .empty strong{display:block;font-size:18px;color:var(--green);margin-bottom:6px}
+    .empty .emptyIcon{font-size:32px;margin-bottom:10px;opacity:.4}
+    .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--brand);border-radius:99px;animation:spin .6s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .skeleton{background:linear-gradient(90deg,rgba(255,255,255,.03) 25%,rgba(255,255,255,.06) 50%,rgba(255,255,255,.03) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;height:60px;margin-bottom:6px}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    /* ── Snooze menu ──────────────────── */
+    .snoozeMenu{position:absolute;right:14px;bottom:calc(100% + 4px);background:#1a2540;border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:6px;z-index:30;min-width:120px;display:flex;flex-direction:column;gap:2px}
+    .snoozeOpt{font-size:12px;padding:6px 10px;border-radius:6px;color:var(--text);cursor:pointer;border:none;background:transparent;text-align:left;font-family:inherit}
+    .snoozeOpt:hover{background:rgba(255,255,255,.06)}
+
+    /* ── Toast ─────────────────────────── */
+    .toasts{position:fixed;bottom:20px;right:20px;z-index:100;display:flex;flex-direction:column;gap:6px}
+    .toast{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.4);animation:slideIn .2s ease-out}
+    .toast.ok{border-color:rgba(34,197,94,.3)} .toast.err{border-color:rgba(239,68,68,.3);color:#fca5a5}
+    @keyframes slideIn{from{opacity:0;transform:translateY(10px)}}
+
+    /* ── Modals ────────────────────────── */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50}
+    .modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(460px,94vw);background:#131e30;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:22px;z-index:51;display:flex;flex-direction:column;gap:12px;max-height:90vh;overflow-y:auto}
+    .modal h3{font-size:16px;font-weight:700}
+    .modal p{font-size:13px;color:var(--muted)}
+    .mLabel{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:-6px}
+    .mInput,.mSelect,.mTextarea{width:100%;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);border-radius:6px;padding:10px 12px;font-size:14px;font-family:inherit}
+    .mInput:focus,.mTextarea:focus{border-color:rgba(255,255,255,.2)}
+    .mInput::placeholder,.mTextarea::placeholder{color:var(--muted)}
+    .mTextarea{min-height:70px;resize:vertical}
+    .mRow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .mActions{display:flex;gap:10px;justify-content:flex-end;margin-top:4px}
+
+    /* ── Focus visibility ─────────────── */
+    *:focus-visible{outline:2px solid #4A90D9;outline-offset:2px}
+    .actBtn:focus-visible,.hBtn:focus-visible,.chip:focus-visible,.navBtn:focus-visible,
+    .mInput:focus-visible,.mTextarea:focus-visible,.mSelect:focus-visible,
+    .msgInput:focus-visible,.searchBox:focus-visible,.threadInput:focus-visible{
+      outline:2px solid var(--brand);outline-offset:2px
+    }
+
+    /* ── Freshness badge ──────────────── */
+    .freshBadge{font-size:13px;color:var(--muted);margin-left:auto;white-space:nowrap}
+    .freshBadge.stale{color:var(--yellow)}
+
+    /* ── Loading skeletons ────────────── */
+    .skeletonCard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;margin-bottom:6px}
+    .skeletonLine{height:12px;border-radius:4px;margin-bottom:8px;
+      background:linear-gradient(90deg,rgba(255,255,255,.03) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.03) 75%);
+      background-size:200% 100%;animation:shimmer 1.5s infinite}
+    .skeletonLine:last-child{margin-bottom:0}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    /* ── Inline error/retry ───────────── */
+    .inlineError{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:var(--r);padding:16px;text-align:center;margin:8px 0}
+    .inlineError .errTitle{font-size:14px;font-weight:600;color:var(--red);margin-bottom:4px}
+    .inlineError .errMsg{font-size:13px;color:var(--muted);margin-bottom:10px}
+
+    /* ── Keyboard nav highlight ───────── */
+    .card.kb-focus{border-color:var(--brand) !important;box-shadow:0 0 0 1px var(--brand)}
+
+    /* ── Mobile / responsive ────────────── */
+    @media(max-width:768px){
+      .hRow{flex-wrap:wrap;gap:8px}
+      button,.btn,.hBtn,.actBtn,.chip,.navBtn,input,select,textarea{min-height:44px;font-size:15px}
+      .navBtn{padding:12px 16px}
+      .chip{padding:8px 14px}
+      .searchBox{min-height:44px;font-size:15px}
+    }
+
+    .mobileBar{display:none}
+    @media(max-width:640px){
+      .kpis{gap:14px} .cardTitle{font-size:14px} .searchBox{width:120px} .mRow{grid-template-columns:1fr}
+      .kanbanCol{min-width:170px;max-width:200px}
+      .cardQuick{display:none !important}
+      .mobileBar{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);
+        border-top:1px solid var(--border);padding:8px 12px;gap:8px;z-index:30;justify-content:center}
+      .mobileBar .actBtn{flex:1;text-align:center;padding:12px;font-size:15px;min-height:44px}
+      main{padding-bottom:120px !important}
+    }
+
+    /* ── Staff overview ─────────────────── */
+    .staffRow{display:flex;gap:10px;align-items:center;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:4px}
+    .staffName{font-size:14px;font-weight:600;min-width:100px}
+    .staffEvents{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+    .staffPill{font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;white-space:nowrap}
+    .staffPill.booked{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:#93c5fd}
+    .staffPill.rsvp-accepted{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:#86efac}
+    .staffPill.rsvp-declined{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#fca5a5}
+    .staffAvail{font-size:12px;color:var(--green);font-weight:600}
+    .needsStaffBanner{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:var(--r);padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .needsStaffBanner .nsLabel{font-size:13px;font-weight:600;color:var(--yellow)}
+    .needsStaffBanner .nsDetail{font-size:12px;color:var(--muted);flex:1}
+
+    /* ── Template buttons ────────────── */
+    .tplRow{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+    .tplBtn{font-size:10px;font-weight:700;padding:4px 10px;border-radius:4px;border:1px solid rgba(59,130,246,.2);background:rgba(59,130,246,.04);color:#93c5fd;cursor:pointer;font-family:inherit;transition:all .12s;text-transform:uppercase;letter-spacing:.3px}
+    .tplBtn:hover{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.35)}
+    @media(max-width:640px){
+      .tplRow{gap:6px}
+      .tplBtn{font-size:12px;padding:10px 14px;min-height:40px;letter-spacing:.2px;flex:1 1 calc(50% - 6px)}
+    }
+
+    /* ── Staff overview empty state ──── */
+    .staffEmpty{text-align:center;padding:20px 16px;background:var(--surface);border:1px dashed var(--border);border-radius:var(--r);color:var(--muted)}
+    .staffEmptyIcon{font-size:28px;margin-bottom:6px;opacity:.6}
+    .staffEmptyTitle{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+    .staffEmptyHint{font-size:12px}
+    .staffEmptyInline{padding:10px 14px;background:var(--surface);border:1px dashed var(--border);border-radius:var(--r);color:var(--muted);font-size:12px;text-align:center;margin-top:6px}
+
+    /* ── Keyboard hint (desktop only) ─── */
+    .kbHint{position:fixed;bottom:10px;left:14px;font-size:10px;color:rgba(100,116,139,.3);z-index:5;pointer-events:none}
+    @media(max-width:640px){.kbHint{display:none}}
+
+    /* ── Calendar View ────────────────── */
+    .calHeader{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
+    .calTitle{font-size:16px;font-weight:700}
+    .calNav{display:flex;gap:6px;align-items:center}
+    .calNavBtn{font-size:14px;font-weight:600;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .12s}
+    .calNavBtn:hover{color:var(--text);border-color:rgba(255,255,255,.18)}
+    .calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+    .calDayLabel{background:var(--surface2);padding:6px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+    .calCell{background:var(--surface);min-height:80px;padding:4px 6px;position:relative;transition:background .12s}
+    .calCell:hover{background:var(--surface2)}
+    .calCell.outside{opacity:.3}
+    .calCell.today{background:rgba(255,145,0,.04);box-shadow:inset 0 0 0 1px rgba(255,145,0,.2)}
+    .calDayNum{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:2px}
+    .calCell.today .calDayNum{color:var(--brand);font-weight:800}
+    .calPill{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;line-height:1.4;transition:opacity .12s}
+    .calPill:hover{opacity:.8}
+    .calPill.event{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);color:#93c5fd}
+    .calPill.task{background:rgba(255,145,0,.1);border:1px solid rgba(255,145,0,.25);color:var(--brand)}
+    .calPill.past{opacity:.4}
+    .calMore{font-size:10px;color:var(--muted);cursor:pointer;padding:1px 4px}
+    .calMore:hover{color:var(--text)}
+    .calViewToggle{display:flex;gap:4px;align-items:center}
+    .calViewBtn{font-size:11px;font-weight:600;padding:4px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .12s}
+    .calViewBtn:hover{color:var(--text)}
+    .calViewBtn.on{background:rgba(255,145,0,.1);border-color:rgba(255,145,0,.35);color:var(--brand)}
+
+    /* ── Calendar event popup ─────────── */
+    .calPopup{position:fixed;z-index:55;background:#1a2540;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:14px;min-width:240px;max-width:320px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+    .calPopup h4{font-size:14px;font-weight:700;margin-bottom:6px}
+    .calPopup .cpMeta{font-size:12px;color:var(--muted);margin-bottom:2px}
+    .calPopup .cpClose{position:absolute;top:8px;right:10px;font-size:14px;cursor:pointer;color:var(--muted);background:none;border:none;font-family:inherit}
+    .calPopup .cpClose:hover{color:var(--text)}
+
+    /* ── Overdue visual indicator ─────── */
+    .card.overdue{border-color:rgba(239,68,68,.35) !important}
+    .card.overdue::after{content:'OVERDUE';position:absolute;top:8px;right:50px;font-size:9px;font-weight:800;letter-spacing:.5px;color:#fca5a5;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);padding:1px 6px;border-radius:3px}
+
+    /* ── Stale badge ──────────────────── */
+    .badge.stale{background:rgba(100,116,139,.1);border:1px solid rgba(100,116,139,.25);color:#94a3b8}
+
+    /* ── Show completed toggle ────────── */
+    .toggleWrap{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;user-select:none}
+    .toggleWrap input{accent-color:var(--brand)}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="shell">
+    <div class="hRow">
+      <div class="brand">Merch Troop</div>
+      <div class="hSpacer"></div>
+      <span class="freshBadge" id="headerFreshBadge" title="Last data sync time"></span>
+      <button class="hBtn" onclick="syncGhl()" id="syncBtn">Sync GHL</button>
+      <button class="hBtn primary" onclick="showAddModal()">+ Task</button>
+      <button class="hBtn" onclick="logout()">Out</button>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="kpiVal green" id="kPipeline">–</div><div class="kpiLbl">pipeline</div></div>
+      <div class="kpi"><div class="kpiVal red" id="kOverdue">–</div><div class="kpiLbl">overdue</div></div>
+      <div class="kpi"><div class="kpiVal yellow" id="kFollowUps">–</div><div class="kpiLbl">follow-ups</div></div>
+      <div class="kpi"><div class="kpiVal dim" id="kEvents">–</div><div class="kpiLbl">events</div></div>
+    </div>
+    <div class="nav">
+      <button class="navBtn on" onclick="go('dash',this)">Dashboard</button>
+      <button class="navBtn" onclick="go('pipeline',this)">Pipeline</button>
+      <button class="navBtn" onclick="go('inbox',this)">Inbox<span class="navBadge" id="inboxBadge" style="display:none">0</span></button>
+      <button class="navBtn" onclick="go('events',this)">Events</button>
+      <button class="navBtn" onclick="go('history',this)">Done</button>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="shell">
+
+  <!-- ════ Dashboard ════ -->
+  <div class="pane on" id="paneDash">
+    <div class="filters" id="filterBar">
+      <button class="chip on" onclick="setFilter('all',this)">All</button>
+      <button class="chip" onclick="setFilter('urgent',this)">Urgent</button>
+      <button class="chip" onclick="setFilter('mine',this)">Mine</button>
+      <button class="chip" onclick="setFilter('unassigned',this)">Open</button>
+      <button class="chip" onclick="setFilter('stale',this)">Stale</button>
+      <label class="toggleWrap"><input type="checkbox" id="showCompletedToggle" onchange="toggleShowCompleted()"> Show completed</label>
+      <input class="searchBox" placeholder="Search..." oninput="searchQ=this.value;renderDash()">
+    </div>
+
+    <!-- Alerts -->
+    <div id="alertsSec" class="sec" style="display:none">
+      <div class="secHead"><span class="secDot red"></span> Needs Attention <span class="secCnt" id="alertsCnt">0</span></div>
+      <div id="alertsList"></div>
+    </div>
+
+    <!-- Task sections -->
+    <div id="secUrgent" class="sec" style="display:none">
+      <div class="secHead"><span class="secDot red"></span> Do Now <span class="secCnt" id="cntUrgent">0</span></div>
+      <div id="listUrgent"></div>
+    </div>
+    <div id="secAttention" class="sec" style="display:none">
+      <div class="secHead"><span class="secDot yellow"></span> Coming Up <span class="secCnt" id="cntAttention">0</span></div>
+      <div id="listAttention"></div>
+    </div>
+    <div id="secNormal" class="sec" style="display:none">
+      <div class="secHead"><span class="secDot blue"></span> On Deck <span class="secCnt" id="cntNormal">0</span></div>
+      <div id="listNormal"></div>
+    </div>
+    <div id="secCompleted" class="sec" style="display:none">
+      <div class="secHead"><span class="secDot green"></span> Completed <span class="secCnt" id="cntCompleted">0</span></div>
+      <div id="listCompleted"></div>
+    </div>
+    <div class="empty" id="emptyDash" style="display:none"><div class="emptyIcon">&#10003;</div><strong>All clear.</strong>No active tasks match your filter. Try a different filter or sync GHL for new leads.</div>
+  </div>
+
+  <!-- ════ Pipeline / Kanban ════ -->
+  <div class="pane" id="panePipeline">
+    <div style="padding:12px 0;display:flex;gap:8px;align-items:center">
+      <button class="chip on" onclick="setKanbanType('order',this)">Orders</button>
+      <button class="chip" onclick="setKanbanType('event',this)">Events</button>
+    </div>
+    <div class="kanbanWrap"><div class="kanbanTrack" id="kanbanTrack"></div></div>
+  </div>
+
+  <!-- ════ Inbox ════ -->
+  <div class="pane" id="paneInbox">
+    <div style="padding:12px 0;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:14px;font-weight:700">GHL Conversations</div>
+      <button class="hBtn" onclick="loadInbox()">Refresh</button>
+    </div>
+    <div id="threadView" style="display:none"></div>
+    <div id="inboxList"></div>
+    <div class="empty" id="emptyInbox" style="display:none"><div class="emptyIcon">&#9993;</div><strong>No conversations.</strong>All caught up. New GHL conversations will appear here automatically.</div>
+  </div>
+
+  <!-- ════ Events ════ -->
+  <div class="pane" id="paneEvents">
+    <div class="filters">
+      <button class="chip on" onclick="setEvFilter('upcoming',this)">Upcoming</button>
+      <button class="chip" onclick="setEvFilter('all',this)">All</button>
+      <div style="flex:1"></div>
+      <div class="calViewToggle">
+        <button class="calViewBtn on" onclick="setEvView('list',this)">List</button>
+        <button class="calViewBtn" onclick="setEvView('calendar',this)">Calendar</button>
+      </div>
+      <button class="hBtn primary" onclick="showAddEventModal()">+ Event</button>
+    </div>
+    <!-- Staff Availability Overview -->
+    <div id="staffOverviewSec" class="sec" style="display:none">
+      <div class="secHead"><span class="secDot blue"></span> Staff Availability <span class="secCnt" id="staffOverviewCnt">0</span></div>
+      <div id="staffOverviewContent"></div>
+    </div>
+    <div id="eventListView">
+      <div id="eventList"></div>
+      <div class="empty" id="emptyEvents" style="display:none"><div class="emptyIcon">&#128197;</div><strong>No events.</strong>Add an event manually or sync from GHL invoices.</div>
+    </div>
+    <div id="eventCalendarView" style="display:none">
+      <div class="calHeader">
+        <button class="calNavBtn" onclick="calNav(-1)">&larr;</button>
+        <div class="calTitle" id="calMonthTitle">April 2026</div>
+        <button class="calNavBtn" onclick="calNav(1)">&rarr;</button>
+      </div>
+      <div class="calGrid" id="calGrid"></div>
+    </div>
+    <div id="calPopupContainer"></div>
+  </div>
+
+  <!-- ════ History ════ -->
+  <div class="pane" id="paneHistory">
+    <div id="historyContent" style="padding-top:12px"></div>
+    <div class="empty" id="emptyHistory" style="display:none"><div class="emptyIcon">&#128203;</div><strong>No completed tasks yet.</strong>When you mark tasks as done, they will appear here with notes and timestamps.</div>
+  </div>
+
+</div>
+</main>
+
+<!-- ── Modals ──────────────────────────── -->
+<div id="mAdd" style="display:none">
+  <div class="overlay" onclick="closeModals()"></div>
+  <div class="modal">
+    <h3>Add Task</h3>
+    <div class="mLabel">Contact</div><input class="mInput" id="addContact" placeholder="Name">
+    <div class="mLabel">Job</div><input class="mInput" id="addJob" placeholder="Description">
+    <div class="mRow">
+      <div><div class="mLabel">Stage</div><select class="mSelect" id="addStage">
+        <option value="follow_up_lead">Follow up lead</option><option value="send_estimate">Send estimate</option>
+        <option value="follow_up_estimate">Follow up estimate</option><option value="order_blanks">Order blanks</option>
+        <option value="confirm_art">Confirm art</option><option value="schedule_production">Schedule production</option>
+        <option value="qc_pack">QC + pack</option><option value="ship_deliver">Ship / deliver</option>
+      </select></div>
+      <div><div class="mLabel">Type</div><select class="mSelect" id="addJobType"><option value="order">Order</option><option value="event">Event</option></select></div>
+    </div>
+    <div class="mRow">
+      <div><div class="mLabel">Amount ($)</div><input class="mInput" id="addAmount" type="number" placeholder="0"></div>
+      <div><div class="mLabel">Due date</div><input class="mInput" id="addDue" type="date"></div>
+    </div>
+    <div class="mLabel">Notes</div><textarea class="mTextarea" id="addNotes" placeholder="Details..."></textarea>
+    <div class="mActions"><button class="hBtn" onclick="closeModals()">Cancel</button><button class="hBtn primary" onclick="submitAdd()">Add</button></div>
+  </div>
+</div>
+
+<div id="mAddEvent" style="display:none">
+  <div class="overlay" onclick="closeModals()"></div>
+  <div class="modal">
+    <h3>Add Event</h3>
+    <div class="mLabel">Customer</div><input class="mInput" id="aeContact" placeholder="Name">
+    <div class="mLabel">Event name</div><input class="mInput" id="aeEventName" placeholder="Event name">
+    <div class="mRow"><div><div class="mLabel">Date</div><input class="mInput" id="aeDate" type="date"></div><div><div class="mLabel">Type</div><input class="mInput" id="aeType" placeholder="Live screen print"></div></div>
+    <div class="mRow"><div><div class="mLabel">Start</div><input class="mInput" id="aeStart" type="time" value="10:00"></div><div><div class="mLabel">End</div><input class="mInput" id="aeEnd" type="time" value="18:00"></div></div>
+    <div class="mLabel">Location</div><input class="mInput" id="aeLocation" placeholder="Venue">
+    <div class="mLabel">Address</div><input class="mInput" id="aeAddress" placeholder="Full address">
+    <div class="mRow"><div><div class="mLabel">Staff</div><input class="mInput" id="aeStaff" type="number" value="2" min="1"></div><div><div class="mLabel">Amount ($)</div><input class="mInput" id="aeAmount" type="number" placeholder="0"></div></div>
+    <div class="mLabel">Notes</div><textarea class="mTextarea" id="aeNotes" placeholder="Details..."></textarea>
+    <div class="mActions"><button class="hBtn" onclick="closeModals()">Cancel</button><button class="hBtn primary" onclick="submitAddEvent()">Add</button></div>
+  </div>
+</div>
+
+<div id="mComplete" style="display:none">
+  <div class="overlay" onclick="closeModals()"></div>
+  <div class="modal">
+    <h3>Mark Done</h3><p id="mCompleteDesc"></p>
+    <textarea class="mTextarea" id="mCompleteNote" placeholder="Note (optional)"></textarea>
+    <div class="mActions"><button class="hBtn" onclick="closeModals()">Cancel</button><button class="actBtn done" onclick="submitComplete()">Done</button></div>
+  </div>
+</div>
+
+<div id="mUnclaim" style="display:none">
+  <div class="overlay" onclick="closeModals()"></div>
+  <div class="modal">
+    <h3>Unclaim Event Spot</h3><p id="mUnclaimDesc"></p>
+    <div class="mLabel">Reason (required)</div>
+    <textarea class="mTextarea" id="mUnclaimReason" placeholder="Why are you unclaiming this spot?"></textarea>
+    <div class="mActions"><button class="hBtn" onclick="closeModals()">Cancel</button><button class="actBtn" style="border-color:rgba(239,68,68,.3);color:#fca5a5;background:rgba(239,68,68,.05)" onclick="submitUnclaim()">Unclaim</button></div>
+  </div>
+</div>
+
+<!-- Mobile bottom action bar (visible on phone only) -->
+<div class="mobileBar" id="mobileBar" style="display:none">
+  <button class="actBtn claim" onclick="mobileAction('claim')">Claim</button>
+  <button class="actBtn done" onclick="mobileAction('done')">Done</button>
+  <button class="actBtn" onclick="mobileAction('snooze')">Snooze</button>
+</div>
+
+<div class="kbHint" id="kbHint">j/k navigate &middot; enter expand &middot; d done &middot; c claim</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════════════════════════ */
+let tasks=[],history=[],events=[],alerts=[],conversations=[],completedTasks=[];
+let me=localStorage.getItem('portalUser')||'Cole';
+let tab='dash',activeFilter='all',evFilter='upcoming',searchQ='',expandedId=null,editingId=null,completingId=null,snoozeOpenId=null,kanbanType='order';
+let openThreadId=null,openThreadName='',threadMessages=[];
+let lastTaskSync=null,lastEventSync=null,lastKpiSync=null,lastInboxSync=null;
+let kbIdx=-1; // keyboard navigation index
+let tasksLoading=true;
+let showCompleted=false; // data quality: hide completed by default
+let evView='list'; // 'list' or 'calendar'
+let calYear=new Date().getFullYear(),calMonth=new Date().getMonth(); // 0-indexed
+
+const PIPES={
+  order:['follow_up_lead','send_estimate','follow_up_estimate','order_blanks','confirm_art','schedule_production','qc_pack','ship_deliver'],
+  event:['follow_up_lead','send_estimate','follow_up_estimate','confirm_event','order_event_supplies','event_production','pack_event_kit'],
+};
+const LABELS={
+  follow_up_lead:'Follow up',send_estimate:'Send estimate',follow_up_estimate:'Follow up estimate',
+  order_blanks:'Order blanks',confirm_art:'Confirm art',schedule_production:'Schedule production',
+  qc_pack:'QC + pack',ship_deliver:'Ship / deliver',confirm_event:'Confirm event',
+  order_event_supplies:'Order supplies',event_production:'Production',pack_event_kit:'Pack kit',
+};
+
+/* ══════════════════════════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════════════════════════ */
+const esc=s=>s==null?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function authH(){const t=localStorage.getItem('portalToken');return t?{Authorization:'Bearer '+t}:{Authorization:'Basic '+btoa('team:MerchTroopTeam')}}
+const fmt$=v=>v>=1000?'$'+(v/1000).toFixed(v%1000===0?0:1)+'k':'$'+v;
+const fmtDate=s=>s?new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
+function fmtDay(s){if(!s||s==='unknown')return'Unknown';const d=new Date(s+'T12:00:00'),t=new Date();t.setHours(0,0,0,0);const y=new Date(t);y.setDate(y.getDate()-1);return d>=t?'Today':d>=y?'Yesterday':d.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}
+function fmtTime(iso){if(!iso)return'';if(typeof iso==='number')return new Date(iso).toLocaleTimeString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});return new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
+function fmtRelative(iso){if(!iso)return'';const ms=typeof iso==='number'?Date.now()-iso:Date.now()-new Date(iso).getTime();const h=ms/3600000;if(h<1)return'now';if(h<24)return Math.round(h)+'h';const d=Math.floor(h/24);return d+'d'}
+function waitLabel(iso){if(!iso)return'New';const h=(Date.now()-new Date(iso).getTime())/3600000;if(h<1)return'Just now';if(h<24)return Math.round(h)+'h';const d=Math.floor(h/24);return d+(d===1?' day':' days')}
+function waitClass(iso){if(!iso)return'';const d=(Date.now()-new Date(iso).getTime())/86400000;return d>=3?'wait-hot':d>=1?'wait-warm':''}
+function toast(msg,type=''){const el=document.createElement('div');el.className='toast '+type;el.textContent=msg;document.getElementById('toasts').appendChild(el);setTimeout(()=>el.remove(),4000)}
+async function post(path,body){
+  try{
+    const r=await fetch(path,{method:'POST',headers:{...authH(),'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await r.json();
+    if(!r.ok){toast(data?.error||'Request failed ('+r.status+')','err');return data}
+    return data;
+  }catch(e){toast('Network error: '+e.message,'err');return null}
+}
+function initials(name){return(name||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+// Confirm dialog helper — returns true if user confirms
+function confirmAction(msg){return window.confirm(msg)}
+
+/* ══════════════════════════════════════════════════════════════
+   BOOT
+   ══════════════════════════════════════════════════════════════ */
+boot();
+async function boot(){
+  await checkAuth();
+  await Promise.all([loadTasks(),loadHistory(),loadEvents(),loadKpis(),loadAlerts(),loadInbox()]);
+  setInterval(loadTasks,30000);setInterval(loadEvents,60000);setInterval(loadKpis,60000);setInterval(loadAlerts,120000);
+}
+async function checkAuth(){
+  const t=localStorage.getItem('portalToken');if(!t){window.location.href='/login';return}
+  try{const r=await fetch('/api/auth/me',{headers:authH()});if(!r.ok){localStorage.removeItem('portalToken');window.location.href='/login';return}
+  const d=await r.json();if(d.ok){localStorage.setItem('portalRole',d.role||'');localStorage.setItem('portalUser',d.name||'');me=d.name||'Cole'}}catch(e){console.error('[auth] Check failed:',e.message)}
+}
+function logout(){fetch('/api/auth/logout',{method:'POST',headers:authH()});localStorage.removeItem('portalToken');localStorage.removeItem('portalUser');localStorage.removeItem('portalRole');window.location.href='/login'}
+
+/* ══════════════════════════════════════════════════════════════
+   DATA
+   ══════════════════════════════════════════════════════════════ */
+async function loadTasks(){
+  if(tasksLoading&&tab==='dash'){
+    document.getElementById('listUrgent').innerHTML=[1,2,3].map(()=>'<div class="skeletonCard"><div class="skeletonLine" style="width:55%"></div><div class="skeletonLine" style="width:80%"></div><div class="skeletonLine" style="width:35%"></div></div>').join('');
+    document.getElementById('secUrgent').style.display='';
+  }
+  try{
+    const r=await fetch('/api/tasks?status=active',{headers:authH()});if(!r.ok)throw new Error('HTTP '+r.status);tasks=(await r.json()).items||[];lastTaskSync=Date.now();tasksLoading=false;updateHeaderFresh();
+    // Also load completed tasks for the toggle
+    if(showCompleted){
+      try{const cr=await fetch('/api/tasks/history',{headers:authH()});completedTasks=(await cr.json()).items||[]}catch{completedTasks=[]}
+    }
+    if(tab==='dash')renderDash();if(tab==='pipeline')renderKanban()
+  }
+  catch(e){tasksLoading=false;if(tab==='dash'){document.getElementById('listUrgent').innerHTML=`<div class="inlineError"><div class="errTitle">Could not load tasks</div><div class="errMsg">Check that the portal server is running.</div><button class="actBtn claim" onclick="loadTasks()">Retry</button></div>`;document.getElementById('secUrgent').style.display=''}
+  }
+}
+async function loadHistory(){try{const r=await fetch('/api/tasks/history',{headers:authH()});if(!r.ok)throw new Error('HTTP '+r.status);history=(await r.json()).items||[];if(tab==='history')renderHistory()}catch(e){console.error('[load] History failed:',e.message)}}
+async function loadEvents(){try{const r=await fetch('/api/schedule',{headers:authH()});if(!r.ok)throw new Error('HTTP '+r.status);events=(await r.json()).items||[];lastEventSync=Date.now();if(tab==='events')renderEvents()}catch(e){console.error('[load] Events failed:',e.message);if(tab==='events'&&!events.length)document.getElementById('eventList').innerHTML='<div class="inlineError"><div class="errTitle">Could not load events</div><div class="errMsg">'+esc(e.message)+'</div><button class="actBtn claim" onclick="loadEvents()">Retry</button></div>'}}
+async function loadKpis(){
+  try{const r=await fetch('/api/overview/kpis',{headers:authH()});const d=await r.json();if(!d.ok)return;
+  document.getElementById('kPipeline').textContent=fmt$(d.pipelineRevenue||0);
+  document.getElementById('kOverdue').textContent=d.overdueCount??0;
+  document.getElementById('kFollowUps').textContent=d.followUpsDueToday??0;
+  document.getElementById('kEvents').textContent=d.eventsThisWeek??0;
+  const ov=document.getElementById('kOverdue');ov.className='kpiVal'+(d.overdueCount>0?' red':' dim');
+  const fu=document.getElementById('kFollowUps');fu.className='kpiVal'+(d.followUpsDueToday>0?' yellow':' dim')}catch(e){console.error('[load] KPIs failed:',e.message)}
+}
+async function loadAlerts(){
+  try{const r=await fetch('/api/overview/alerts',{headers:authH()});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();alerts=d.alerts||[];renderAlerts()}catch(e){console.error('[load] Alerts failed:',e.message)}
+}
+async function loadInbox(){
+  try{const r=await fetch('/api/ghl/conversations?limit=25',{headers:authH()});const d=await r.json();conversations=d.items||[];lastInboxSync=Date.now();
+  const badge=document.getElementById('inboxBadge');const unread=conversations.filter(c=>c.unreadCount>0).length;
+  badge.style.display=unread>0?'':'none';badge.textContent=unread;
+  if(tab==='inbox')renderInbox()}catch(e){console.error('[load] Inbox failed:',e.message)}
+}
+
+/* ══════════════════════════════════════════════════════════════
+   NAVIGATION
+   ══════════════════════════════════════════════════════════════ */
+function go(t,el){
+  tab=t;document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');
+  ['Dash','Pipeline','Inbox','Events','History'].forEach(p=>document.getElementById('pane'+p).classList.toggle('on',t===p.toLowerCase()));
+  document.getElementById('filterBar').style.display=t==='dash'?'':'none';
+  if(t==='dash')renderDash();if(t==='pipeline')renderKanban();if(t==='inbox')renderInbox();if(t==='events')renderEvents();if(t==='history')renderHistory();
+}
+function setFilter(f,el){activeFilter=f;document.querySelectorAll('#filterBar .chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');renderDash()}
+function setEvFilter(f,el){evFilter=f;document.querySelectorAll('#paneEvents .filters>.chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');renderEvents()}
+
+/* ══════════════════════════════════════════════════════════════
+   RENDER: DASHBOARD
+   ══════════════════════════════════════════════════════════════ */
+function renderDash(){
+  let list=tasks.slice();
+  // Apply filters
+  if(activeFilter==='urgent')list=list.filter(t=>t.priority==='urgent');
+  if(activeFilter==='mine')list=list.filter(t=>t.assignee===me);
+  if(activeFilter==='unassigned')list=list.filter(t=>!t.assignee);
+  if(activeFilter==='stale')list=list.filter(t=>!!t.staleAt);
+  if(searchQ){const q=searchQ.toLowerCase();list=list.filter(t=>(t.contactName||'').toLowerCase().includes(q)||(t.taskLabel||'').toLowerCase().includes(q)||(t.jobName||'').toLowerCase().includes(q))}
+
+  // Merge completed tasks if toggle is on
+  if(showCompleted&&completedTasks.length){
+    let ct=completedTasks.slice();
+    if(searchQ){const q=searchQ.toLowerCase();ct=ct.filter(t=>(t.contactName||'').toLowerCase().includes(q)||(t.taskLabel||'').toLowerCase().includes(q)||(t.jobName||'').toLowerCase().includes(q))}
+    list=list.concat(ct.map(t=>({...t,priority:'completed'})));
+  }
+
+  const urgent=list.filter(t=>t.priority==='urgent'),attention=list.filter(t=>t.priority==='attention'),normal=list.filter(t=>t.priority==='normal');
+  const completed=list.filter(t=>t.priority==='completed');
+  const freshLabel=lastTaskSync?fmtFreshness(lastTaskSync):'';
+  renderSec('secUrgent','listUrgent','cntUrgent',urgent,freshLabel);
+  renderSec('secAttention','listAttention','cntAttention',attention);
+  renderSec('secNormal','listNormal','cntNormal',normal);
+
+  // Render completed section if toggled on
+  const compSec=document.getElementById('secCompleted');
+  if(compSec){
+    if(completed.length){compSec.style.display='';document.getElementById('cntCompleted').textContent=completed.length;document.getElementById('listCompleted').innerHTML=completed.map(renderCard).join('')}
+    else{compSec.style.display='none'}
+  }
+
+  document.getElementById('emptyDash').style.display=list.length?'none':'';
+
+  // Mobile bar: show if a task is selected
+  updateMobileBar();
+
+  // Auto-load conversation when expanding a follow-up task
+  if(expandedId){
+    const t=tasks.find(x=>x.id===expandedId)||completedTasks.find(x=>x.id===expandedId);
+    if(t&&['follow_up_lead','follow_up_estimate'].includes(t.stage)){
+      const zone=document.getElementById('msg-'+expandedId);
+      if(zone&&!zone.dataset.loaded){zone.dataset.loaded='1';autoDraft(t)}
+    }
+    const cp=document.getElementById('conv-'+expandedId);
+    if(cp&&!cp.dataset.loaded&&t?.sourceContactId){cp.dataset.loaded='1';loadConvPreview(t.sourceContactId,expandedId)}
+  }
+}
+
+function toggleShowCompleted(){
+  showCompleted=document.getElementById('showCompletedToggle').checked;
+  if(showCompleted&&!completedTasks.length){loadTasks()}else{renderDash()}
+}
+
+function renderSec(secId,listId,cntId,items,freshLabel){
+  const sec=document.getElementById(secId),list=document.getElementById(listId),cnt=document.getElementById(cntId);
+  sec.style.display=items.length?'':'none';cnt.textContent=items.length;list.innerHTML=items.map(renderCard).join('');
+  // Freshness badge on first section header
+  if(secId==='secUrgent'&&lastTaskSync){
+    const head=sec.querySelector('.secHead');
+    if(head){
+      // Remove old badge if exists, then add fresh one
+      const old=head.querySelector('.freshBadge');if(old)old.remove();
+      const stale=(Date.now()-lastTaskSync)>60000;
+      head.insertAdjacentHTML('beforeend',`<span class="freshBadge${stale?' stale':''}">${fmtFreshness(lastTaskSync)}</span>`);
+    }
+  }
+}
+
+function fmtFreshness(ts){
+  if(!ts)return'';
+  const s=Math.floor((Date.now()-ts)/1000);
+  if(s<10)return'just now';
+  if(s<60)return s+'s ago';
+  const m=Math.floor(s/60);
+  if(m<60)return m+'m ago';
+  return Math.floor(m/60)+'h ago';
+}
+
+function updateHeaderFresh(){
+  const el=document.getElementById('headerFreshBadge');if(!el)return;
+  if(!lastTaskSync){el.textContent='';return}
+  const stale=(Date.now()-lastTaskSync)>60000;
+  el.className='freshBadge'+(stale?' stale':'');
+  el.textContent='Last synced: '+fmtFreshness(lastTaskSync);
+}
+setInterval(updateHeaderFresh,10000);
+
+function renderCard(t){
+  const exp=expandedId===t.id,isMe=t.assignee===me;
+  const sub=[t.contactName,t.dueDate?fmtDate(t.dueDate):null,t.completedAt?'Done '+fmtDate(t.completedAt.slice(0,10)):null].filter(Boolean).join(' \u00B7 ');
+  const amt=t.amount?`<span class="cardAmt${Number(t.amount)>=1000?' big':''}">${fmt$(Number(t.amount))}</span>`:'';
+  let badges='';
+  const wc=waitClass(t.waitingSince);if(wc)badges+=`<span class="badge ${wc}">${esc(waitLabel(t.waitingSince))}</span>`;
+  if(t.slaText&&t.slaStatus!=='onTrack')badges+=`<span class="badge sla-${t.slaStatus}">${esc(t.slaText)}</span>`;
+  if(t.flaggedAt)badges+=`<span class="badge flagged">Flagged</span>`;
+  if(t.paymentRequired)badges+=`<span class="badge pay">Unpaid</span>`;
+  if(t.staleAt)badges+=`<span class="badge stale">Stale</span>`;
+
+  // Overdue detection: dueDate in the past and not completed
+  const isOverdue=!t.completedAt&&t.dueDate&&new Date(t.dueDate+'T23:59:59').getTime()<Date.now();
+  const isCompleted=!!t.completedAt;
+
+  return`<div class="card p-${esc(t.priority||'normal')}${exp?' open':''}${isOverdue?' overdue':''}${isCompleted?' completed':''}" id="tc-${esc(t.id)}" style="position:relative${isCompleted?';opacity:.55':''}">
+  <div class="cardHead" onclick="toggle('${esc(t.id)}')">
+    <div class="cardLeft">
+      <div class="cardTitle">${esc(t.taskLabel)}</div>
+      <div class="cardSub">${esc(sub)}</div>
+    </div>
+    <div class="cardRight">
+      <span class="cardStage">${esc(LABELS[t.stage]||t.stage)}</span>
+      ${badges}${amt}
+      ${t.assignee?`<span class="badge assigned">${esc(t.assignee)}</span>`:''}
+      <span class="cardChev">\u25B6</span>
+    </div>
+  </div>
+  ${!exp?`<div class="cardQuick">
+    ${t.paymentRequired?`<button class="actBtn send" onclick="markPaid('${esc(t.id)}',event)">Mark Paid</button>`
+      :!t.assignee?`<button class="actBtn claim" onclick="claim('${esc(t.id)}')">Claim</button>`
+      :isMe?`<button class="actBtn" onclick="unclaim('${esc(t.id)}')">Unclaim</button>`:''}
+    <div class="actSpacer"></div>
+    ${!t.paymentRequired?`<button class="actBtn done" onclick="openComplete('${esc(t.id)}',event)">Done</button>`:''}
+  </div>`:''}
+  ${exp?renderExpanded(t):''}
+</div>`}
+
+function renderExpanded(t){
+  const pipe=PIPES[t.jobType]||PIPES.order;const curIdx=pipe.indexOf(t.stage);
+  const steps=pipe.map((s,i)=>`<span class="pipeS ${i<curIdx?'done':i===curIdx?'cur':'todo'}">${esc(LABELS[s]||s)}</span>${i<pipe.length-1?'<span class="pipeA">\u203A</span>':''}`).join('');
+  const links=(t.quickLinks||[]).map(l=>`<a class="qlink" href="${esc(l.href)}" target="_blank">${esc(l.label)}</a>`).join('');
+  const isFollowUp=['follow_up_lead','follow_up_estimate'].includes(t.stage);
+  const isMe=t.assignee===me;
+
+  return`<div class="cardBody">
+  <div class="pipe">${steps}</div>
+  ${t.notes?`<div class="notes">${esc(t.notes)}</div>`:''}
+  ${links?`<div class="qlinks">${links}</div>`:''}
+
+  <!-- Conversation preview -->
+  <div class="convPreview" id="conv-${esc(t.id)}">
+    <div class="convLoading">${t.sourceContactId?'Loading conversation...':'No GHL contact linked'}</div>
+  </div>
+
+  <!-- Message composer -->
+  <div class="msgZone" id="msg-${esc(t.id)}">
+    <div class="msgLabel">Send Message</div>
+    <div class="tplRow">
+      <button class="tplBtn" onclick="applyTemplate('${esc(t.id)}','follow_up_estimate')">Follow up estimate</button>
+      <button class="tplBtn" onclick="applyTemplate('${esc(t.id)}','art_approval')">Art approval</button>
+      <button class="tplBtn" onclick="applyTemplate('${esc(t.id)}','order_shipped')">Order shipped</button>
+      <button class="tplBtn" onclick="applyTemplate('${esc(t.id)}','event_reminder')">Event reminder</button>
+    </div>
+    <div class="msgTabs">
+      <button class="msgTab on" onclick="switchMsgTab('${esc(t.id)}','sms',this)">SMS</button>
+      <button class="msgTab" onclick="switchMsgTab('${esc(t.id)}','email',this)">Email</button>
+    </div>
+    <textarea class="msgInput" id="msgText-${esc(t.id)}" placeholder="${isFollowUp?'Generating draft...':'Select a template or type your message...'}" ${!isFollowUp?'':''}></textarea>
+    <div class="msgActions">
+      <button class="actBtn send" onclick="sendMsg('${esc(t.id)}')">Send via GHL</button>
+      <button class="actBtn" onclick="copyMsg('${esc(t.id)}')">Copy</button>
+      ${isFollowUp?`<button class="actBtn" onclick="redraft('${esc(t.id)}')">Redraft</button>`:''}
+      <span class="msgStatus" id="msgStatus-${esc(t.id)}"></span>
+    </div>
+  </div>
+
+  <div class="actions" style="position:relative">
+    ${t.paymentRequired?`<button class="actBtn send" onclick="markPaid('${esc(t.id)}',event)">Mark Paid</button>`
+      :!t.assignee?`<button class="actBtn claim" onclick="claim('${esc(t.id)}')">Claim</button>`
+      :isMe?`<button class="actBtn" onclick="unclaim('${esc(t.id)}')">Unclaim</button>`:''}
+    <button class="actBtn" onclick="editingId='${esc(t.id)}';renderDash();event.stopPropagation()">Edit</button>
+    <button class="actBtn" onclick="markCold('${esc(t.id)}',event)">Cold</button>
+    <button class="actBtn" onclick="toggleSnooze('${esc(t.id)}',event)">Snooze</button>
+    <div class="actSpacer"></div>
+    ${!t.paymentRequired?`<button class="actBtn done" onclick="openComplete('${esc(t.id)}',event)">Done</button>`:''}
+    ${snoozeOpenId===t.id?`<div class="snoozeMenu" onclick="event.stopPropagation()">
+      <button class="snoozeOpt" onclick="snooze('${esc(t.id)}',1)">Tomorrow</button>
+      <button class="snoozeOpt" onclick="snooze('${esc(t.id)}',3)">3 days</button>
+      <button class="snoozeOpt" onclick="snooze('${esc(t.id)}',7)">1 week</button>
+    </div>`:''}
+  </div>
+</div>`}
+
+/* ── Conversation preview loader ─────── */
+const convCache={};  // contactId → conversationId
+
+async function loadConvPreview(contactId,taskId){
+  const el=document.getElementById('conv-'+taskId);if(!el)return;
+  try{
+    // Use cached mapping or find the conversation
+    let convId=convCache[contactId];
+    if(!convId){
+      // Use existing loaded conversations first
+      const cached=conversations.find(c=>c.contactId===contactId);
+      if(cached){convId=cached.id}
+      else{
+        const cr=await fetch(`/api/ghl/conversations?limit=50`,{headers:authH()});const cd=await cr.json();
+        const conv=(cd.items||[]).find(c=>c.contactId===contactId);
+        if(conv)convId=conv.id;
+      }
+      if(convId)convCache[contactId]=convId;
+    }
+    if(!convId){el.innerHTML='<div class="convLoading">No conversation history</div>';return}
+    const mr=await fetch(`/api/ghl/conversations/${convId}/messages?limit=8`,{headers:authH()});const md=await mr.json();
+    const msgs=(md.messages||[]).reverse();
+    if(!msgs.length){el.innerHTML='<div class="convLoading">No messages yet</div>';return}
+    el.innerHTML=msgs.map(m=>{
+      const dir=m.direction==='inbound'?'in':'out';
+      const body=(m.body||'').trim().slice(0,200);
+      const time=fmtRelative(m.dateAdded);
+      return body?`<div class="convMsg ${dir}"><div>${esc(body)}</div><div class="convTime">${time} ago</div></div>`:'';
+    }).filter(Boolean).join('');
+    el.scrollTop=el.scrollHeight;
+  }catch{el.innerHTML='<div class="convLoading">Could not load conversation</div>'}
+}
+
+/* ── Alerts ───────────────────────────── */
+function renderAlerts(){
+  const sec=document.getElementById('alertsSec');
+  if(!alerts.length){sec.style.display='none';return}
+  sec.style.display='';document.getElementById('alertsCnt').textContent=alerts.length;
+  document.getElementById('alertsList').innerHTML=alerts.map(a=>`
+    <div class="card" style="margin-bottom:4px;border-left:3px solid var(--red)">
+      <div style="padding:10px 14px;display:flex;align-items:center;gap:10px">
+        <div style="flex:1;font-size:13px">${esc(a.message)}</div>
+        ${a.taskId?`<button class="actBtn" onclick="jumpToTask('${esc(a.taskId)}')">View</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RENDER: PIPELINE KANBAN
+   ══════════════════════════════════════════════════════════════ */
+function setKanbanType(t,el){kanbanType=t;document.querySelectorAll('#panePipeline .chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');renderKanban()}
+
+function renderKanban(){
+  const track=document.getElementById('kanbanTrack');if(!track)return;
+  const stages=PIPES[kanbanType]||PIPES.order;
+  const relevant=kanbanType==='event'?tasks.filter(t=>t.jobType==='event'):tasks.filter(t=>t.jobType==='order'||!t.jobType);
+  track.innerHTML=stages.map(stage=>{
+    const label=LABELS[stage]||stage;const items=relevant.filter(t=>t.stage===stage);
+    return`<div class="kanbanCol">
+      <div class="kanbanHead"><span class="secDot blue"></span>${esc(label)}<span class="kanbanCnt">${items.length}</span></div>
+      <div class="kanbanCards">${items.length?items.map(t=>`
+        <div class="kCard" onclick="jumpToTask('${esc(t.id)}')">
+          <div class="kName">${esc(t.contactName)}</div>
+          <div class="kJob">${esc(t.jobName&&t.jobName!==t.contactName?t.jobName:'')}</div>
+          <div class="kFoot">${t.amount?`<span class="kRev">${fmt$(Number(t.amount))}</span>`:'<span></span>'}<span class="kDue">${t.dueDate?fmtDate(t.dueDate):(t.slaText||'')}</span></div>
+        </div>`).join(''):'<div class="kanbanEmpty">\u2014</div>'}</div>
+    </div>`}).join('')}
+
+function jumpToTask(id){
+  if(tab!=='dash'){const btn=document.querySelector('.navBtn');go('dash',document.querySelector('.navBtn'));setTimeout(()=>{expandedId=id;renderDash();setTimeout(()=>document.getElementById('tc-'+id)?.scrollIntoView({behavior:'smooth',block:'start'}),40)},80);return}
+  expandedId=id;renderDash();setTimeout(()=>document.getElementById('tc-'+id)?.scrollIntoView({behavior:'smooth',block:'start'}),40);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RENDER: INBOX
+   ══════════════════════════════════════════════════════════════ */
+function renderInbox(){
+  const list=document.getElementById('inboxList'),tv=document.getElementById('threadView');
+  if(openThreadId){tv.style.display='';list.style.display='none';renderThread();return}
+  tv.style.display='none';list.style.display='';
+  if(!conversations.length&&!lastInboxSync){
+    list.innerHTML=[1,2,3].map(()=>'<div class="skeletonCard"><div class="skeletonLine" style="width:40%"></div><div class="skeletonLine" style="width:75%"></div></div>').join('');
+    document.getElementById('emptyInbox').style.display='none';
+    return;
+  }
+  document.getElementById('emptyInbox').style.display=conversations.length?'none':'';
+  list.innerHTML=conversations.map(c=>{
+    const dir=c.lastMessageDirection==='inbound'?'\u2190':'\u2192';
+    const time=fmtRelative(c.lastMessageDate);
+    return`<div class="inboxItem${c.unreadCount>0?' unread':''}" onclick="openThread('${esc(c.id)}','${esc(c.contactName||'Unknown')}','${esc(c.contactId||'')}')">
+      <div class="inboxAvatar">${initials(c.contactName)}</div>
+      <div class="inboxInfo">
+        <div class="inboxName">${esc(c.contactName||c.phone||'Unknown')}</div>
+        <div class="inboxPreview"><span class="inboxDir">${dir}</span>${esc(c.lastMessageBody||'')}</div>
+      </div>
+      <div class="inboxTime">${time}</div>
+    </div>`}).join('')}
+
+async function openThread(convId,name,contactId){
+  openThreadId=convId;openThreadName=name;threadMessages=[];renderThread();
+  try{
+    const r=await fetch(`/api/ghl/conversations/${convId}/messages?limit=20`,{headers:authH()});
+    const d=await r.json();threadMessages=(d.messages||[]).reverse();renderThread()
+  }catch{toast('Could not load messages','err')}
+}
+
+function renderThread(){
+  const tv=document.getElementById('threadView');
+  tv.style.display='';document.getElementById('inboxList').style.display='none';
+  const msgs=threadMessages.map(m=>{
+    const dir=m.direction==='inbound'?'in':'out';
+    const body=(m.body||'').trim();if(!body)return'';
+    const time=fmtRelative(m.dateAdded);
+    return`<div class="convMsg ${dir}"><div>${esc(body.slice(0,500))}</div><div class="convTime">${time} ago</div></div>`}).filter(Boolean).join('');
+
+  tv.innerHTML=`<div class="threadPanel">
+    <div class="threadHead">
+      <button class="actBtn" onclick="closeThread()">\u2190 Back</button>
+      <div class="threadName">${esc(openThreadName)}</div>
+    </div>
+    <div class="threadMsgs" id="threadMsgs">${msgs||'<div class="convLoading">Loading...</div>'}</div>
+    <div class="threadCompose">
+      <textarea class="threadInput" id="threadReply" placeholder="Type a message..." rows="1"></textarea>
+      <button class="actBtn send" onclick="sendThreadReply()">Send</button>
+    </div>
+  </div>`;
+  const el=document.getElementById('threadMsgs');if(el)el.scrollTop=el.scrollHeight;
+}
+
+function closeThread(){openThreadId=null;renderInbox()}
+
+async function sendThreadReply(){
+  const el=document.getElementById('threadReply');if(!el)return;
+  const msg=el.value.trim();if(!msg){toast('Type a message','err');return}
+  // Find contactId from conversations list
+  const conv=conversations.find(c=>c.id===openThreadId);
+  if(!conv?.contactId){toast('No contact linked','err');return}
+  el.disabled=true;
+  const r=await post('/api/ghl/send-sms',{contactId:conv.contactId,message:msg,taskId:null});
+  if(r?.ok&&r?.sent){toast('Sent','ok');el.value='';await openThread(openThreadId,openThreadName,conv.contactId)}
+  else toast('Failed: '+(r?.error||'unknown'),'err');
+  el.disabled=false;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RENDER: EVENTS
+   ══════════════════════════════════════════════════════════════ */
+function renderEvents(){
+  let list=events.slice();if(evFilter==='upcoming')list=list.filter(e=>!e.isPast);
+  document.getElementById('emptyEvents').style.display=list.length?'none':'';
+  if(evView==='calendar'){renderCalendar();loadStaffOverview();return}
+  loadStaffOverview();
+  const myEmail=(localStorage.getItem('portalUserEmail')||'').toLowerCase();
+  document.getElementById('eventList').innerHTML=list.map(e=>{
+    const d=new Date(e.date+'T12:00:00');const mo=d.toLocaleDateString('en-US',{month:'short'}).toUpperCase();
+    const dy=d.getDate();const dw=d.toLocaleDateString('en-US',{weekday:'short'});
+    const filled=e.spotsFilled??(e.claims||[]).length;const isFull=e.isFull||filled>=e.staffNeeded;
+    const fmt12=t=>{if(!t)return'';const[h,m]=t.split(':').map(Number);return(h%12||12)+(m?':'+String(m).padStart(2,'0'):'')+(h<12?' AM':' PM')};
+    const myClaim=(e.claims||[]).find(c=>c.email.toLowerCase()===myEmail);
+    const dots=(e.claims||[]).map(c=>{
+      const rsvpCls=c.rsvpStatus==='accepted'?' rsvp-accepted':c.rsvpStatus==='declined'?' rsvp-declined':'';
+      return`<div class="evDot filled${rsvpCls}" title="${esc(c.name)}${c.rsvpStatus?' ('+c.rsvpStatus+')':''}">${initials(c.name)}</div>`});
+    for(let i=filled;i<e.staffNeeded;i++)dots.push('<div class="evDot empty">+</div>');
+    // Claim/unclaim buttons
+    let staffActions='';
+    if(!e.isPast){
+      if(myClaim){
+        staffActions=`<button class="actBtn" style="font-size:11px;margin-left:8px" onclick="openUnclaim('${esc(e.id)}','${esc(myClaim.email)}','${esc(e.eventName||e.contactName)} on ${e.date}')">Unclaim</button>`;
+      } else if(!isFull){
+        staffActions=`<button class="actBtn claim" style="font-size:11px;margin-left:8px" onclick="claimEvent('${esc(e.id)}')">Claim Spot</button>`;
+      }
+    }
+    // Staff detail list
+    const staffList=(e.claims||[]).length?`<div style="margin-top:6px;font-size:12px;color:var(--muted)">${(e.claims||[]).map(c=>`<span style="margin-right:10px">${esc(c.name)}${c.rsvpStatus&&c.rsvpStatus!=='pending'?' <span style="font-size:10px;opacity:.7">('+c.rsvpStatus+')</span>':''}</span>`).join('')}</div>`:'';
+    return`<div class="evCard${e.isPast?' past':''}">
+      <div class="evTop">
+        <div class="evDate"><div class="evMo">${esc(mo)}</div><div class="evDy">${dy}</div><div class="evDw">${esc(dw)}</div></div>
+        <div class="evInfo">
+          <div class="evName">${esc(e.eventName)}</div>
+          <div class="evClient">${esc(e.contactName)}${e.amount?' \u00B7 $'+Number(e.amount).toLocaleString():''}</div>
+          <div class="evMeta">
+            ${e.address||e.location?`<span>${esc(e.address||e.location)}</span>`:''}
+            ${e.startTime?`<span>${fmt12(e.startTime)} \u2013 ${fmt12(e.endTime)}</span>`:''}
+          </div>
+        </div>
+      </div>
+      <div class="evStaff">${dots.join('')}<span class="evSpots ${isFull?'full':'open'}">${isFull?'Full':(e.staffNeeded-filled)+' open'}</span>${staffActions}</div>
+      ${staffList}
+      ${e.notes?`<div class="notes" style="margin-top:8px;font-size:12px">${esc(e.notes)}</div>`:''}
+    </div>`}).join('')}
+
+/* ══════════════════════════════════════════════════════════════
+   STAFF OVERVIEW + EVENT CLAIM/UNCLAIM
+   ══════════════════════════════════════════════════════════════ */
+let staffOverviewCache=null;
+async function loadStaffOverview(){
+  try{
+    const r=await fetch('/api/schedule/staff-overview',{headers:authH()});
+    const d=await r.json();if(!d.ok)return;
+    staffOverviewCache=d;
+    renderStaffOverview(d);
+  }catch(e){console.error('[staff-overview]',e.message)}
+}
+
+function renderStaffOverview(d){
+  const sec=document.getElementById('staffOverviewSec');
+  const content=document.getElementById('staffOverviewContent');
+  if(!sec||!content)return;
+
+  const needsStaff=d.eventsNeedingStaff||[];
+  const booked=d.bookedStaff||[];
+  const knownOnsite=Array.isArray(d.knownOnsiteStaff)?d.knownOnsiteStaff:[];
+
+  // Always show the section so users see the status at a glance
+  sec.style.display='';
+  const cntEl=document.getElementById('staffOverviewCnt');
+  if(cntEl){
+    if(booked.length)cntEl.textContent=booked.length+' booked';
+    else if(needsStaff.length)cntEl.textContent=needsStaff.length+' need staff';
+    else cntEl.textContent='all clear';
+  }
+
+  let html='';
+
+  // Empty state — no upcoming staffed events and no open spots
+  if(!booked.length && !needsStaff.length){
+    const rosterHint=knownOnsite.length
+      ? `<div style="font-size:11px;color:var(--muted);margin-top:6px">Onsite roster: ${knownOnsite.map(esc).join(', ')}</div>`
+      : '';
+    html=`<div class="staffEmpty">
+      <div class="staffEmptyIcon">&#128100;</div>
+      <div class="staffEmptyTitle">No upcoming staffed events</div>
+      <div class="staffEmptyHint">When an event needs staff or someone claims a spot, they'll appear here.</div>
+      ${rosterHint}
+    </div>`;
+    content.innerHTML=html;
+    return;
+  }
+
+  // Events needing staff banner
+  if(needsStaff.length){
+    html+=needsStaff.map(e=>`<div class="needsStaffBanner">
+      <div class="nsLabel">${e.spotsOpen} spot${e.spotsOpen>1?'s':''} open</div>
+      <div class="nsDetail">${esc(e.eventName)} — ${fmtDate(e.date)}${e.location?' — '+esc(e.location):''}</div>
+      <button class="actBtn claim" style="font-size:11px" onclick="claimEvent('${esc(e.eventId)}')">Claim</button>
+    </div>`).join('');
+  }
+
+  // Booked staff list
+  if(booked.length){
+    html+=booked.map(s=>{
+      const pills=s.events.map(e=>{
+        const rsvpCls=e.rsvpStatus==='accepted'?'rsvp-accepted':e.rsvpStatus==='declined'?'rsvp-declined':'booked';
+        return`<span class="staffPill ${rsvpCls}">${fmtDate(e.date)} ${esc((e.eventName||'').slice(0,25))}${e.rsvpStatus&&e.rsvpStatus!=='pending'?' ('+e.rsvpStatus+')':''}</span>`;
+      }).join('');
+      return`<div class="staffRow">
+        <div class="staffName">${esc(s.name)}</div>
+        <div class="staffEvents">${pills}</div>
+      </div>`;
+    }).join('');
+  } else if(needsStaff.length){
+    // Needs staff but no one booked yet
+    html+=`<div class="staffEmptyInline">No staff booked yet — click <strong>Claim</strong> above to take a spot.</div>`;
+  }
+
+  content.innerHTML=html;
+}
+
+let unclaimEventId=null,unclaimEmail=null;
+function openUnclaim(eventId,email,desc){
+  unclaimEventId=eventId;unclaimEmail=email;
+  document.getElementById('mUnclaimDesc').textContent='Unclaiming: '+desc;
+  document.getElementById('mUnclaimReason').value='';
+  document.getElementById('mUnclaim').style.display='';
+  setTimeout(()=>document.getElementById('mUnclaimReason').focus(),50);
+}
+async function submitUnclaim(){
+  if(!unclaimEventId||!unclaimEmail)return;
+  const reason=document.getElementById('mUnclaimReason').value.trim();
+  if(!reason){toast('A reason is required','err');return}
+  const r=await post('/api/schedule/unclaim',{eventId:unclaimEventId,email:unclaimEmail,reason});
+  closeModals();
+  if(r?.ok){toast('Unclaimed','ok');await loadEvents()}
+  else{toast(r?.error||'Unclaim failed','err')}
+}
+
+async function claimEvent(eventId){
+  const name=me||prompt('Your name:');if(!name)return;
+  let email=localStorage.getItem('portalUserEmail');
+  if(!email){email=prompt('Your email:');if(!email)return;localStorage.setItem('portalUserEmail',email)}
+  const r=await post('/api/schedule/claim',{eventId,name,email});
+  if(r?.ok){
+    let msg='Spot claimed!';
+    if(r.confirmationDrafted)msg+=' Confirmation email drafted.';
+    if(r.inviteSent)msg+=' Calendar invite sent.';
+    toast(msg,'ok');await loadEvents();
+  } else{toast(r?.error||'Claim failed','err')}
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CALENDAR VIEW
+   ══════════════════════════════════════════════════════════════ */
+function setEvView(view,el){
+  evView=view;
+  document.querySelectorAll('#paneEvents .calViewBtn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('eventListView').style.display=view==='list'?'':'none';
+  document.getElementById('eventCalendarView').style.display=view==='calendar'?'':'none';
+  if(view==='calendar')renderCalendar();
+}
+
+function calNav(dir){
+  calMonth+=dir;
+  if(calMonth>11){calMonth=0;calYear++}
+  if(calMonth<0){calMonth=11;calYear--}
+  renderCalendar();
+}
+
+function renderCalendar(){
+  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('calMonthTitle').textContent=monthNames[calMonth]+' '+calYear;
+
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const prevMonthDays=new Date(calYear,calMonth,0).getDate();
+  const todayStr=new Date().toISOString().slice(0,10);
+
+  // Build event map: date string → array of events
+  const evMap={};
+  for(const e of events){
+    if(!e.date)continue;
+    if(!evMap[e.date])evMap[e.date]=[];
+    evMap[e.date].push(e);
+  }
+  // Also map tasks with dueDates
+  const taskMap={};
+  for(const t of tasks){
+    if(!t.dueDate)continue;
+    if(!taskMap[t.dueDate])taskMap[t.dueDate]=[];
+    taskMap[t.dueDate].push(t);
+  }
+
+  let html='';
+  // Day labels
+  for(const d of dayNames)html+=`<div class="calDayLabel">${d}</div>`;
+
+  // Previous month trailing days
+  const totalCells=Math.ceil((firstDay+daysInMonth)/7)*7;
+  for(let i=0;i<totalCells;i++){
+    let dayNum,dateStr,isOutside=false,isToday=false;
+    if(i<firstDay){
+      // Previous month
+      dayNum=prevMonthDays-firstDay+i+1;
+      const pm=calMonth===0?11:calMonth-1;
+      const py=calMonth===0?calYear-1:calYear;
+      dateStr=`${py}-${String(pm+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
+      isOutside=true;
+    } else if(i-firstDay>=daysInMonth){
+      // Next month
+      dayNum=i-firstDay-daysInMonth+1;
+      const nm=calMonth===11?0:calMonth+1;
+      const ny=calMonth===11?calYear+1:calYear;
+      dateStr=`${ny}-${String(nm+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
+      isOutside=true;
+    } else {
+      dayNum=i-firstDay+1;
+      dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
+    }
+    isToday=dateStr===todayStr;
+    const isPast=dateStr<todayStr;
+
+    const dayEvents=evMap[dateStr]||[];
+    const dayTasks=taskMap[dateStr]||[];
+    const maxShow=3;
+    const totalItems=dayEvents.length+dayTasks.length;
+
+    let pillsHtml='';
+    let shown=0;
+    for(const e of dayEvents){
+      if(shown>=maxShow)break;
+      pillsHtml+=`<span class="calPill event${isPast?' past':''}" onclick="showCalPopup(event,'event','${esc(e.id)}')" title="${esc(e.eventName||e.contactName)}">${esc((e.eventName||e.contactName||'Event').slice(0,20))}</span>`;
+      shown++;
+    }
+    for(const t of dayTasks){
+      if(shown>=maxShow)break;
+      pillsHtml+=`<span class="calPill task${isPast?' past':''}" onclick="showCalPopup(event,'task','${esc(t.id)}')" title="${esc(t.taskLabel||t.contactName)}">${esc((t.contactName||t.taskLabel||'Task').slice(0,20))}</span>`;
+      shown++;
+    }
+    if(totalItems>maxShow){
+      pillsHtml+=`<span class="calMore">+${totalItems-maxShow} more</span>`;
+    }
+
+    html+=`<div class="calCell${isOutside?' outside':''}${isToday?' today':''}" data-date="${dateStr}">
+      <div class="calDayNum">${dayNum}</div>${pillsHtml}
+    </div>`;
+  }
+
+  document.getElementById('calGrid').innerHTML=html;
+}
+
+let calPopupOpen=false;
+function showCalPopup(evt,type,id){
+  evt.stopPropagation();
+  closeCalPopup();
+  let content='';
+  if(type==='event'){
+    const e=events.find(x=>x.id===id);
+    if(!e)return;
+    const d=new Date(e.date+'T12:00:00');
+    const dateStr=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+    const fmt12=t=>{if(!t)return'';const[h,m]=t.split(':').map(Number);return(h%12||12)+(m?':'+String(m).padStart(2,'0'):'')+(h<12?' AM':' PM')};
+    content=`<h4>${esc(e.eventName||e.contactName)}</h4>
+      <div class="cpMeta">${esc(dateStr)}</div>
+      ${e.startTime?`<div class="cpMeta">${fmt12(e.startTime)} - ${fmt12(e.endTime)}</div>`:''}
+      <div class="cpMeta">${esc(e.contactName)}</div>
+      ${e.address||e.location?`<div class="cpMeta">${esc(e.address||e.location)}</div>`:''}
+      ${e.amount?`<div class="cpMeta" style="color:var(--green);font-weight:700">$${Number(e.amount).toLocaleString()}</div>`:''}
+      ${e.notes?`<div class="cpMeta" style="margin-top:6px;font-size:11px;white-space:pre-wrap">${esc(e.notes.slice(0,200))}</div>`:''}`;
+  } else {
+    const t=tasks.find(x=>x.id===id);
+    if(!t)return;
+    content=`<h4>${esc(t.taskLabel||t.stage)}</h4>
+      <div class="cpMeta">${esc(t.contactName)}</div>
+      ${t.dueDate?`<div class="cpMeta">Due: ${fmtDate(t.dueDate)}</div>`:''}
+      ${t.amount?`<div class="cpMeta" style="color:var(--green);font-weight:700">${fmt$(Number(t.amount))}</div>`:''}
+      ${t.assignee?`<div class="cpMeta">Assigned: ${esc(t.assignee)}</div>`:''}
+      <button class="actBtn" style="margin-top:8px" onclick="closeCalPopup();jumpToTask('${esc(t.id)}')">View Task</button>`;
+  }
+
+  const popup=document.createElement('div');
+  popup.className='calPopup';
+  popup.innerHTML=`<button class="cpClose" onclick="closeCalPopup()">&times;</button>${content}`;
+  // Position near click
+  const rect=evt.target.getBoundingClientRect();
+  popup.style.left=Math.min(rect.left,window.innerWidth-340)+'px';
+  popup.style.top=Math.min(rect.bottom+4,window.innerHeight-300)+'px';
+  document.getElementById('calPopupContainer').appendChild(popup);
+  calPopupOpen=true;
+}
+
+function closeCalPopup(){
+  document.getElementById('calPopupContainer').innerHTML='';
+  calPopupOpen=false;
+}
+document.addEventListener('click',e=>{if(calPopupOpen&&!e.target.closest('.calPopup')&&!e.target.closest('.calPill'))closeCalPopup()});
+
+/* ══════════════════════════════════════════════════════════════
+   RENDER: HISTORY
+   ══════════════════════════════════════════════════════════════ */
+function renderHistory(){
+  if(!history.length){document.getElementById('historyContent').innerHTML='';document.getElementById('emptyHistory').style.display='';return}
+  document.getElementById('emptyHistory').style.display='none';
+  const groups={};for(const t of history){const day=t.completedAt?t.completedAt.slice(0,10):'unknown';if(!groups[day])groups[day]=[];groups[day].push(t)}
+  document.getElementById('historyContent').innerHTML=Object.entries(groups).map(([day,items])=>`
+    <div class="histDay"><div class="histDate">${fmtDay(day)}</div>
+    ${items.map(t=>`<div class="histItem">
+      <div style="color:var(--green);font-size:14px;flex-shrink:0">\u2713</div>
+      <div class="histInfo"><div class="histTitle">${esc(t.taskLabel)}</div><div class="histMeta">${esc(t.contactName)}${t.assignee?' \u00B7 '+t.assignee:''}</div>
+      ${t.completionNote?`<div class="histNote">${esc(t.completionNote)}</div>`:''}</div>
+      <div class="histTime">${fmtTime(t.completedAt)}</div>
+    </div>`).join('')}</div>`).join('')}
+
+/* ══════════════════════════════════════════════════════════════
+   AUTO-DRAFT + MESSAGING
+   ══════════════════════════════════════════════════════════════ */
+async function autoDraft(t){
+  const el=document.getElementById('msgText-'+t.id);if(!el)return;
+  el.value='';el.placeholder='Generating draft...';
+  const status=document.getElementById('msgStatus-'+t.id);if(status)status.innerHTML='<span class="spinner"></span>';
+  const waitDays=t.waitingSince?(Date.now()-new Date(t.waitingSince).getTime())/86400000:0;
+  const followUpDay=waitDays<1.5?1:waitDays<3.5?3:7;
+  try{const r=await post('/api/ai/draft-email',{taskId:t.id,followUpDay});
+    if(r?.ok&&r.draft){el.value=r.draft.smsText||'';el.dataset.sms=r.draft.smsText||'';el.dataset.emailSubject=r.draft.emailSubject||'';el.dataset.emailBody=r.draft.emailBody||'';el.placeholder='Edit before sending...';if(status)status.innerHTML='<span class="msgStatus ok">Draft ready</span>'}
+    else{el.placeholder='Type your message...';if(status)status.innerHTML='<span class="msgStatus err">Draft failed</span>'}
+  }catch{el.placeholder='Type your message...';if(status)status.innerHTML='<span class="msgStatus err">Error</span>'}
+}
+async function redraft(taskId){const t=tasks.find(x=>x.id===taskId);if(t){const z=document.getElementById('msg-'+taskId);if(z)z.dataset.loaded='';await autoDraft(t)}}
+
+async function applyTemplate(taskId,template){
+  const el=document.getElementById('msgText-'+taskId);if(!el)return;
+  const status=document.getElementById('msgStatus-'+taskId);
+  if(status)status.innerHTML='<span class="spinner"></span>';
+  el.value='';el.placeholder='Loading template...';
+  try{
+    const r=await post('/api/ai/template',{taskId,template});
+    if(r?.ok&&r.draft){
+      el.value=r.draft.smsText||'';
+      el.dataset.sms=r.draft.smsText||'';
+      el.dataset.emailSubject=r.draft.emailSubject||'';
+      el.dataset.emailBody=r.draft.emailBody||'';
+      el.placeholder='Edit before sending...';
+      if(status)status.innerHTML='<span class="msgStatus ok">Template loaded</span>';
+      // Reset to SMS tab
+      const tabs=document.querySelectorAll('#msg-'+taskId+' .msgTab');
+      tabs.forEach(b=>b.classList.remove('on'));
+      if(tabs[0])tabs[0].classList.add('on');
+    } else{
+      el.placeholder='Template failed — type manually';
+      if(status)status.innerHTML='<span class="msgStatus err">'+(r?.error||'Failed')+'</span>';
+    }
+  }catch{
+    el.placeholder='Error loading template';
+    if(status)status.innerHTML='<span class="msgStatus err">Error</span>';
+  }
+}
+function switchMsgTab(taskId,tab,el){
+  const ta=document.getElementById('msgText-'+taskId);if(!ta)return;
+  document.querySelectorAll(`#msg-${taskId} .msgTab`).forEach(b=>b.classList.remove('on'));el.classList.add('on');
+  if(tab==='sms')ta.value=ta.dataset.sms||'';
+  else{const s=ta.dataset.emailSubject||'',b=ta.dataset.emailBody||'';ta.value=s?`Subject: ${s}\n\n${b}`:b}
+}
+function copyMsg(taskId){const el=document.getElementById('msgText-'+taskId);if(el)navigator.clipboard.writeText(el.value).then(()=>toast('Copied','ok'))}
+async function sendMsg(taskId){
+  const t=tasks.find(x=>x.id===taskId);if(!t)return;
+  const el=document.getElementById('msgText-'+taskId),status=document.getElementById('msgStatus-'+taskId);
+  const message=el?.value?.trim();if(!message){toast('Type a message first','err');return}
+  const contactId=t.sourceContactId||t.contactId||null;
+  if(!contactId){toast('No GHL contact linked','err');return}
+  if(status)status.innerHTML='<span class="spinner"></span> Sending...';
+  try{const r=await post('/api/ghl/send-sms',{contactId,message,taskId});
+    if(r?.ok&&r?.sent){if(status)status.innerHTML='<span class="msgStatus ok">Sent!</span>';toast('Sent via GHL','ok');
+    // Reload conversation preview
+    const cp=document.getElementById('conv-'+taskId);if(cp){cp.dataset.loaded='';loadConvPreview(contactId,taskId)}}
+    else{if(status)status.innerHTML=`<span class="msgStatus err">${r?.error||'Failed'}</span>`;toast('Send failed','err')}
+  }catch{if(status)status.innerHTML='<span class="msgStatus err">Error</span>';toast('Send error','err')}
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TASK ACTIONS
+   ══════════════════════════════════════════════════════════════ */
+function toggle(id){expandedId=expandedId===id?null:id;snoozeOpenId=null;editingId=null;renderDash();if(expandedId)setTimeout(()=>document.getElementById('tc-'+id)?.scrollIntoView({behavior:'smooth',block:'nearest'}),40)}
+async function claim(id){const r=await post('/api/tasks/accept',{taskId:id,assignee:me});if(r?.ok){toast('Claimed','ok');await loadTasks()}}
+async function unclaim(id){const r=await post('/api/tasks/unclaim',{taskId:id});if(r?.ok){toast('Unclaimed','ok');await loadTasks()}}
+async function markCold(id,e){if(e)e.stopPropagation();const t=tasks.find(x=>x.id===id);if(!confirmAction('Move "'+(t?.contactName||id)+'" to cold? This will also cancel any linked events.'))return;const r=await post('/api/tasks/set-status',{taskId:id,status:'cold'});if(r?.ok){toast('Moved to cold'+(r.eventsCancelled?' ('+r.eventsCancelled+' event(s) cancelled)':''),'ok');await loadTasks()}}
+function toggleSnooze(id,e){e.stopPropagation();snoozeOpenId=snoozeOpenId===id?null:id;renderDash()}
+async function snooze(id,days){snoozeOpenId=null;const r=await post('/api/tasks/snooze',{taskId:id,days});if(r?.ok){toast('Snoozed for '+days+' day'+(days>1?'s':''),'ok');await loadTasks()}}
+function openComplete(id,e){if(e)e.stopPropagation();completingId=id;const t=tasks.find(x=>x.id===id);document.getElementById('mCompleteDesc').textContent=t?t.taskLabel+' \u2014 '+t.contactName:'';document.getElementById('mCompleteNote').value='';document.getElementById('mComplete').style.display='';setTimeout(()=>document.getElementById('mCompleteNote').focus(),50)}
+async function submitComplete(){if(!completingId)return;const note=document.getElementById('mCompleteNote').value.trim();const btn=document.querySelector('#mComplete .actBtn.done');if(btn){btn.disabled=true;btn.textContent='Saving...'}const r=await post('/api/tasks/complete',{taskId:completingId,note});closeModals();if(btn){btn.disabled=false;btn.textContent='Done'}if(r?.ok){let msg='Complete!';if(r.nextTask)msg='Done! Next: '+(LABELS[r.nextTask.stage]||r.nextTask.stage);if(r.eventsCancelled)msg+=' ('+r.eventsCancelled+' linked event(s) cancelled)';toast(msg,'ok')}else if(!r){toast('Failed to complete task','err')}expandedId=null;await Promise.all([loadTasks(),loadHistory(),loadEvents()])}
+async function markPaid(id,e){if(e)e.stopPropagation();const t=tasks.find(x=>x.id===id);const ref=prompt('Confirm payment for '+(t?.contactName||id)+'.\nInvoice # (optional):','');if(ref===null)return;const r=await post('/api/tasks/mark-paid',{taskId:id,invoiceRef:ref||null});if(r?.ok){toast('Paid! '+(r.nextTask?'Next: '+(LABELS[r.nextTask.stage]||r.nextTask.stage):''),'ok');await Promise.all([loadTasks(),loadKpis()])}else if(r===null){toast('Network error','err')}}
+
+/* ══════════════════════════════════════════════════════════════
+   MODALS
+   ══════════════════════════════════════════════════════════════ */
+function closeModals(){['mAdd','mAddEvent','mComplete','mUnclaim'].forEach(id=>document.getElementById(id).style.display='none');completingId=null}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModals();snoozeOpenId=null;if(openThreadId){closeThread()}else renderDash()}});
+document.addEventListener('click',()=>{if(snoozeOpenId){snoozeOpenId=null;renderDash()}});
+
+function showAddModal(){['addContact','addJob','addAmount','addNotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('addDue').value='';document.getElementById('mAdd').style.display='';setTimeout(()=>document.getElementById('addContact').focus(),50)}
+async function submitAdd(){const c=document.getElementById('addContact').value.trim();if(!c){toast('Contact required','err');return}
+  const r=await post('/api/tasks/create',{contactName:c,jobName:document.getElementById('addJob').value.trim()||c,stage:document.getElementById('addStage').value,jobType:document.getElementById('addJobType').value,amount:document.getElementById('addAmount').value||null,dueDate:document.getElementById('addDue').value||null,notes:document.getElementById('addNotes').value.trim()||null});
+  if(r?.ok){closeModals();toast('Task added','ok');await loadTasks()}else if(r?.error){toast(r.error,'err')}}
+
+function showAddEventModal(){['aeContact','aeEventName','aeLocation','aeAddress','aeType','aeNotes','aeAmount'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});document.getElementById('aeStaff').value='2';document.getElementById('aeStart').value='10:00';document.getElementById('aeEnd').value='18:00';document.getElementById('aeDate').value='';document.getElementById('mAddEvent').style.display='';setTimeout(()=>document.getElementById('aeContact').focus(),50)}
+async function submitAddEvent(){const c=document.getElementById('aeContact').value.trim(),d=document.getElementById('aeDate').value;if(!c){toast('Customer name required','err');return}if(!d){toast('Date required','err');return}
+  const startTime=document.getElementById('aeStart').value,endTime=document.getElementById('aeEnd').value;
+  if(startTime&&endTime&&startTime>=endTime){toast('Start time must be before end time','err');return}
+  const staffVal=parseInt(document.getElementById('aeStaff').value);if(staffVal<1||staffVal>50){toast('Staff count must be 1-50','err');return}
+  const r=await post('/api/schedule/add',{contactName:c,eventName:document.getElementById('aeEventName').value.trim()||c,date:d,startTime,endTime,location:document.getElementById('aeLocation').value.trim(),address:document.getElementById('aeAddress').value.trim(),eventType:document.getElementById('aeType').value.trim(),staffNeeded:staffVal||2,amount:document.getElementById('aeAmount').value||null,notes:document.getElementById('aeNotes').value.trim()||null});
+  if(r?.ok){closeModals();toast('Event added','ok');await loadEvents()}else if(r?.error){toast(r.error,'err')}}
+
+/* ══════════════════════════════════════════════════════════════
+   GHL SYNC
+   ══════════════════════════════════════════════════════════════ */
+async function syncGhl(){const btn=document.getElementById('syncBtn');if(btn){btn.disabled=true;btn.textContent='Syncing...'}
+  try{const r=await fetch('/api/sync/ghl',{method:'POST',headers:authH()});const d=await r.json();
+    if(d.ok){let msg='Synced: +'+(d.created||0)+' tasks';if(d.completed)msg+=', '+(d.completed)+' auto-completed';toast(msg,'ok');await Promise.all([loadTasks(),loadKpis(),loadEvents()])}
+    else{toast('Sync failed: '+(d.error||'unknown error'),'err')}}catch(e){toast('Sync error: '+e.message,'err')}
+  if(btn){btn.disabled=false;btn.textContent='Sync GHL'}}
+
+/* ══════════════════════════════════════════════════════════════
+   KEYBOARD SHORTCUTS
+   ══════════════════════════════════════════════════════════════ */
+function getVisibleTaskIds(){
+  return Array.from(document.querySelectorAll('#paneDash .card')).map(el=>el.id.replace('tc-',''));
+}
+
+document.addEventListener('keydown',e=>{
+  // Skip if typing in an input
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
+  if(e.target.contentEditable==='true')return;
+  if(tab!=='dash')return;
+
+  const ids=getVisibleTaskIds();
+  if(!ids.length)return;
+
+  if(e.key==='j'||e.key==='ArrowDown'){
+    e.preventDefault();
+    kbIdx=Math.min(kbIdx+1,ids.length-1);
+    highlightKb(ids);
+  }
+  else if(e.key==='k'||e.key==='ArrowUp'){
+    e.preventDefault();
+    kbIdx=Math.max(kbIdx-1,0);
+    highlightKb(ids);
+  }
+  else if(e.key==='Enter'&&kbIdx>=0&&kbIdx<ids.length){
+    e.preventDefault();
+    toggle(ids[kbIdx]);
+  }
+  else if(e.key==='d'&&kbIdx>=0&&kbIdx<ids.length){
+    e.preventDefault();
+    openComplete(ids[kbIdx]);
+  }
+  else if(e.key==='c'&&kbIdx>=0&&kbIdx<ids.length){
+    e.preventDefault();
+    claim(ids[kbIdx]);
+  }
+  else if(e.key==='s'&&kbIdx>=0&&kbIdx<ids.length){
+    e.preventDefault();
+    toggleSnooze(ids[kbIdx],e);
+  }
+});
+
+function highlightKb(ids){
+  document.querySelectorAll('.card.kb-focus').forEach(el=>el.classList.remove('kb-focus'));
+  if(kbIdx>=0&&kbIdx<ids.length){
+    const el=document.getElementById('tc-'+ids[kbIdx]);
+    if(el){el.classList.add('kb-focus');el.scrollIntoView({behavior:'smooth',block:'nearest'})}
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE BOTTOM BAR
+   ══════════════════════════════════════════════════════════════ */
+function updateMobileBar(){
+  const bar=document.getElementById('mobileBar');
+  if(!bar||window.innerWidth>640)return;
+  if(!expandedId){bar.style.display='none';return}
+  const t=tasks.find(x=>x.id===expandedId);
+  if(!t){bar.style.display='none';return}
+  bar.style.display='flex';
+  const isMe=t.assignee===me;
+  bar.innerHTML=t.paymentRequired
+    ?`<button class="actBtn send" onclick="markPaid('${esc(t.id)}',event)">Mark Paid</button>`
+    :`${!t.assignee?`<button class="actBtn claim" onclick="claim('${esc(t.id)}')">Claim</button>`:isMe?`<button class="actBtn" onclick="unclaim('${esc(t.id)}')">Unclaim</button>`:''}
+     <button class="actBtn" onclick="snooze('${esc(t.id)}',1)">Snooze</button>
+     <button class="actBtn done" onclick="openComplete('${esc(t.id)}',event)">Done</button>`;
+}
+</script>
+</body>
+</html>

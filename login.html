@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Merch Troop · Sign In</title>
+  <style>
+    :root { --bg: #0b0f1a; --surface: #111827; --border: rgba(255,255,255,.08); --text: #e8edf5; --muted: #64748b; --brand: #ff9100; --r: 8px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, sans-serif; }
+    .wrap { display: flex; align-items: center; justify-content: center; min-height: 100%; padding: 24px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 36px 32px; width: 100%; max-width: 380px; }
+    .logo { font-size: 22px; font-weight: 800; color: var(--brand); margin-bottom: 6px; }
+    .sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+    .label { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 6px; display: block; }
+    .input { width: 100%; background: rgba(255,255,255,.05); border: 1px solid var(--border); color: var(--text); border-radius: var(--r); padding: 11px 14px; font-size: 15px; font-family: inherit; margin-bottom: 16px; }
+    .input:focus { outline: 2px solid var(--brand); outline-offset: 2px; border-color: transparent; }
+    .btn { width: 100%; background: var(--brand); color: #000; border: none; border-radius: var(--r); padding: 12px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 4px; }
+    .btn:hover { filter: brightness(1.06); }
+    .err { font-size: 13px; color: #fca5a5; margin-top: 12px; text-align: center; min-height: 20px; }
+    .hint { font-size: 12px; color: var(--muted); text-align: center; margin-top: 16px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="logo">Merch Troop</div>
+    <div class="sub">Ops Portal — Sign in to continue</div>
+    <label class="label">Name</label>
+    <input class="input" id="nameInput" placeholder="Cole, Christine…" autocomplete="username" autofocus>
+    <label class="label">Password</label>
+    <input class="input" id="passInput" type="password" autocomplete="current-password">
+    <button class="btn" onclick="login()">Sign In</button>
+    <div class="err" id="errMsg"></div>
+    <div class="hint">Contact admin if you need access credentials.</div>
+  </div>
+</div>
+<script>
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+  async function login() {
+    const name = document.getElementById('nameInput').value.trim();
+    const password = document.getElementById('passInput').value;
+    const err = document.getElementById('errMsg');
+    if (!name || !password) { err.textContent = 'Please enter your name and password.'; return; }
+    try {
+      const r = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, password }),
+      });
+      const d = await r.json();
+      if (d.ok) {
+        localStorage.setItem('portalUser', d.name);
+        localStorage.setItem('portalRole', d.role);
+        localStorage.setItem('portalToken', d.token);
+        window.location.href = '/';
+      } else {
+        err.textContent = d.error || 'Invalid credentials.';
+      }
+    } catch { err.textContent = 'Could not reach server.'; }
+  }
+</script>
+</body>
+</html>

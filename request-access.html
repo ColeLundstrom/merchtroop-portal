@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Merch Troop · Request Access</title>
+  <style>
+    :root {
+      --bg:      #0b0f1a;
+      --surface: #111827;
+      --border:  rgba(255,255,255,.08);
+      --text:    #e8edf5;
+      --muted:   #64748b;
+      --ok:      #22c55e;
+      --brand:   #ff9100;
+      --r:       8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      line-height: 1.45;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      width: min(440px, 94vw);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .brand { font-size: 17px; font-weight: 800; color: var(--brand); margin-bottom: 4px; }
+    h1 { font-size: 20px; font-weight: 700; }
+    p { font-size: 14px; color: var(--muted); line-height: 1.5; }
+    label { font-size: 12px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 6px; }
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      border-radius: var(--r);
+      padding: 10px 12px;
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+    }
+    input::placeholder, textarea::placeholder { color: var(--muted); }
+    input:focus, textarea:focus { border-color: rgba(255,255,255,.2); }
+    input:focus-visible, textarea:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-color: transparent; }
+    textarea { min-height: 80px; resize: vertical; }
+    .btn {
+      font-size: 14px;
+      font-weight: 700;
+      padding: 11px 20px;
+      border-radius: var(--r);
+      border: none;
+      background: var(--brand);
+      color: #000;
+      cursor: pointer;
+      font-family: inherit;
+      transition: filter .12s;
+    }
+    .btn:hover { filter: brightness(1.06); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .success {
+      text-align: center;
+      padding: 16px 0;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .success .icon { font-size: 32px; }
+    .success strong { font-size: 16px; font-weight: 700; color: var(--ok); }
+    .success p { font-size: 13px; color: var(--muted); }
+    .err { font-size: 13px; color: #fca5a5; display: none; margin-top: -8px; }
+    .back { font-size: 13px; color: var(--muted); text-align: center; }
+    .back a { color: var(--brand); text-decoration: none; }
+    .back a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div>
+    <div class="brand">Merch Troop</div>
+    <h1>Request Portal Access</h1>
+  </div>
+  <p>Enter your name and we'll reach out with login details once your request is approved by a manager.</p>
+
+  <div id="formSection">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label for="raName">Your name *</label>
+        <input type="text" id="raName" placeholder="e.g. Jane Smith" autocomplete="name">
+      </div>
+      <div>
+        <label for="raReason">Reason for access (optional)</label>
+        <textarea id="raReason" placeholder="e.g. I'm working the April 18 event at Century City…"></textarea>
+      </div>
+      <div class="err" id="raErr"></div>
+      <button class="btn" onclick="submitRequest()" id="raBtn">Submit Request</button>
+    </div>
+  </div>
+
+  <div class="success" id="raSuccess">
+    <div class="icon">✓</div>
+    <strong>Request submitted</strong>
+    <p>A manager will review your request and reach out with your login details.</p>
+  </div>
+
+  <div class="back"><a href="/login">← Back to login</a></div>
+</div>
+
+<script>
+async function submitRequest() {
+  const name = document.getElementById('raName').value.trim();
+  const reason = document.getElementById('raReason').value.trim();
+  const errEl = document.getElementById('raErr');
+  const btn = document.getElementById('raBtn');
+
+  errEl.style.display = 'none';
+  if (!name) { errEl.textContent = 'Please enter your name.'; errEl.style.display = ''; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  try {
+    const r = await fetch('/api/auth/request-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, reason }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      document.getElementById('formSection').style.display = 'none';
+      const suc = document.getElementById('raSuccess');
+      suc.style.display = 'flex';
+    } else {
+      errEl.textContent = d.error || 'Something went wrong. Please try again.';
+      errEl.style.display = '';
+      btn.disabled = false;
+      btn.textContent = 'Submit Request';
+    }
+  } catch {
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.style.display = '';
+    btn.disabled = false;
+    btn.textContent = 'Submit Request';
+  }
+}
+
+document.getElementById('raName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitRequest();
+});
+</script>
+</body>
+</html>

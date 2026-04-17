@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merch Troop Internal Calculator</title>
+<style>
+:root{
+--orange:#ea580c;
+--teal:#14b8a6;
+--bg:#0b0f19;
+--card:#111827;
+--input:#1f2937;
+--border:#334155;
+--text:#f8fafc;
+--muted:#94a3b8;
+--danger:#ef4444;
+--good:#22c55e;
+--warn:#eab308;
+font-family:system-ui,Segoe UI,Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+body{background:#000;color:var(--text);padding:20px;margin:0}
+.container{max-width:1300px;margin:auto}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+h3{margin:0 0 14px 0;color:#fff}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+input,select,textarea{
+width:100%;
+padding:10px;
+background:var(--input);
+border:1px solid var(--border);
+color:white;
+border-radius:8px;
+}
+.row{display:flex;gap:15px;flex-wrap:wrap}
+.row .col{flex:1;min-width:150px}
+button{
+background:var(--orange);
+border:none;
+color:white;
+padding:10px 14px;
+border-radius:8px;
+font-weight:700;
+cursor:pointer;
+}
+button.secondary{background:#334155}
+button.danger{background:var(--danger)}
+.big{font-size:40px;font-weight:900}
+.priceBox{background:#020617;padding:20px;border-radius:10px;border:1px solid var(--border)}
+.copyBox{
+background:#020617;
+border:1px solid var(--border);
+padding:15px;
+border-radius:10px;
+font-size:14px;
+white-space:pre-line;
+line-height:1.45;
+}
+.location{
+border:1px solid var(--border);
+padding:15px;
+border-radius:10px;
+margin-bottom:15px;
+background:#0f172a;
+}
+.quickBar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.quickBtn{
+background:#1e293b;
+border:1px solid var(--border);
+padding:8px 10px;
+border-radius:8px;
+font-size:12px;
+cursor:pointer;
+color:#fff;
+}
+.marginBox{margin-top:10px;font-weight:700}
+.marginGood{color:var(--good)}
+.marginWarn{color:var(--warn)}
+.marginBad{color:var(--danger)}
+.preview{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.preview button{flex:1;min-width:120px;background:#1f2937;border:1px solid var(--border)}
+.sectionTitle{
+font-size:13px;
+text-transform:uppercase;
+letter-spacing:.08em;
+color:var(--muted);
+margin-bottom:10px;
+}
+.totalsGrid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:12px;
+margin-top:16px;
+}
+.miniStat{
+background:#0f172a;
+border:1px solid var(--border);
+border-radius:10px;
+padding:12px;
+}
+.miniStat .label{font-size:12px;color:var(--muted)}
+.miniStat .value{font-size:24px;font-weight:800;margin-top:6px}
+.breakdownTable{
+width:100%;
+border-collapse:collapse;
+margin-top:14px;
+font-size:13px;
+}
+.breakdownTable th,.breakdownTable td{
+border:1px solid var(--border);
+padding:8px;
+text-align:left;
+vertical-align:top;
+}
+.breakdownTable th{
+background:#172033;
+color:#cbd5e1;
+}
+.note{
+font-size:12px;
+color:var(--muted);
+margin-top:8px;
+}
+.apiStatus{
+font-size:12px;
+font-weight:600;
+padding:7px 12px;
+border-radius:6px;
+display:inline-flex;
+align-items:center;
+gap:6px;
+margin-bottom:12px;
+}
+.apiStatus::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0}
+.apiStatus.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#86efac}
+.apiStatus.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+.apiStatus.loading{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:#93c5fd}
+.apiStatus.loading::before{animation:apiPulse 1.2s ease-in-out infinite}
+@keyframes apiPulse{0%,100%{opacity:.3}50%{opacity:1}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="card">
+<h3>Job Setup</h3>
+<div id="apiStatusBar" class="apiStatus loading">Connecting to pricing API...</div>
+<div class="row">
+<div class="col">
+<label>Quantity</label>
+<input id="qty" type="number" value="100" oninput="calc()">
+</div>
+
+<div class="col">
+<label>Blank Cost</label>
+<input id="blank" type="number" value="5" oninput="calc()">
+<div class="quickBar">
+<span class="quickBtn" onclick="setBlank(4.25)">Bella 3001</span>
+<span class="quickBtn" onclick="setBlank(2.75)">Gildan 5000</span>
+<span class="quickBtn" onclick="setBlank(7.2)">Comfort Colors</span>
+</div>
+</div>
+
+<div class="col">
+<label>Markup %</label>
+<input id="markup" type="number" value="40" oninput="calc()">
+</div>
+
+<div class="col">
+<label>Global Event Mode</label>
+<select id="eventMode" onchange="calc()">
+<option value="false">Normal Production</option>
+<option value="true">Live Event</option>
+</select>
+<div class="note">This makes every location live unless that location is manually set otherwise.</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<h3>Decoration</h3>
+
+<div class="preview">
+<button onclick="quickAdd('screen')">Screen Print</button>
+<button onclick="quickAdd('dtf')">DTF</button>
+<button onclick="quickAdd('uvdtf')">UV DTF</button>
+<button onclick="quickAdd('emb')">Embroidery</button>
+<button onclick="quickAdd('laser')">Laser</button>
+<button onclick="quickAdd('wovenPatch')">Woven Patch</button>
+<button onclick="quickAdd('leatherPatch')">Leather Patch</button>
+<button onclick="quickAdd('heatPatch')">Heat Press Patch</button>
+</div>
+
+<div id="locations"></div>
+<button class="secondary" onclick="addLocation()">Add Location</button>
+</div>
+
+<div class="card priceBox">
+<div>Customer Price</div>
+<div class="big" id="unitPrice">$0</div>
+<div>Total: <span id="grand"></span></div>
+<div class="marginBox" id="margin"></div>
+
+<div class="totalsGrid">
+<div class="miniStat">
+<div class="label">Internal Cost Per Unit</div>
+<div class="value" id="costPerUnit">$0.00</div>
+</div>
+<div class="miniStat">
+<div class="label">Profit Per Unit</div>
+<div class="value" id="profitPerUnit">$0.00</div>
+</div>
+<div class="miniStat">
+<div class="label">Total Profit</div>
+<div class="value" id="totalProfit">$0.00</div>
+</div>
+<div class="miniStat">
+<div class="label">Decoration Per Unit</div>
+<div class="value" id="decorationPerUnit">$0.00</div>
+</div>
+</div>
+
+<table class="breakdownTable" id="breakdownTable"></table>
+</div>
+
+<div class="card">
+<h3>Copy Estimate Text</h3>
+<div class="copyBox" id="estimate"></div>
+<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+<button onclick="copyEstimate()">Copy Estimate</button>
+<button class="secondary" onclick="copyBreakdown()">Copy Internal Breakdown</button>
+</div>
+</div>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   PRICING — loaded from API, fallback to hardcoded
+   ══════════════════════════════════════════════════════════════ */
+let pricingTables = null;
+let apiConnected = false;
+
+// Hardcoded fallback (used if API unavailable)
+const FALLBACK_SCREEN = {
+1:{75:2.51,100:1.87,150:1.40,250:1.23,500:1.02,750:0.89,1000:0.81,2500:0.72,5000:0.64},
+2:{75:3.19,100:2.47,150:1.91,250:1.70,500:1.45,750:1.28,1000:1.16,2500:1.06,5000:0.98},
+3:{75:3.61,100:2.81,150:2.17,250:1.91,500:1.62,750:1.40,1000:1.27,2500:1.15,5000:1.06},
+4:{75:4.04,100:3.15,150:2.42,250:2.13,500:1.79,750:1.53,1000:1.37,2500:1.23,5000:1.15},
+5:{75:4.46,100:3.49,150:2.68,250:2.34,500:1.96,750:1.66,1000:1.47,2500:1.32,5000:1.23},
+6:{75:4.89,100:3.83,150:2.93,250:2.55,500:2.13,750:1.79,1000:1.57,2500:1.40,5000:1.32},
+7:{75:5.31,100:4.17,150:3.19,250:2.76,500:2.30,750:1.91,1000:1.67,2500:1.49,5000:1.40},
+8:{75:5.74,100:4.51,150:3.44,250:2.98,500:2.47,750:2.04,1000:1.77,2500:1.57,5000:1.49}
+};
+
+async function loadPricingTables(){
+  const bar = document.getElementById('apiStatusBar');
+  try{
+    const r = await fetch('/api/pricing/tables');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    if(d.ok && d.pricing){
+      pricingTables = d.pricing;
+      apiConnected = true;
+      bar.className = 'apiStatus ok';
+      bar.title = 'Rates loaded from pricing.json on the server';
+      bar.textContent = 'Live pricing connected — rates synced from pricing.json';
+    } else throw new Error('Invalid response');
+  }catch(e){
+    apiConnected = false;
+    bar.className = 'apiStatus err';
+    bar.title = 'Could not reach /api/pricing/tables — using built-in fallback rates. Refresh to retry.';
+    bar.textContent = 'Pricing API unavailable — using fallback rates (refresh to retry)';
+    console.warn('[calculator] API unavailable, using fallback pricing:', e.message);
+  }
+  calc();
+}
+
+loadPricingTables();
+
+let locations = [
+ {method:"screen",colors:1,w:10,h:10,live:false,notes:""}
+]
+
+function money(v){
+ return "$" + (Number(v)||0).toFixed(2)
+}
+
+function setBlank(v){
+ document.getElementById("blank").value = v
+ calc()
+}
+
+function quickAdd(type){
+ locations.push(defaultLocation(type))
+ render()
+ calc()
+}
+
+function addLocation(){
+ locations.push(defaultLocation("screen"))
+ render()
+ calc()
+}
+
+function defaultLocation(type){
+ return {
+ method:type,
+ colors:1,
+ w:10,
+ h:10,
+ live:false,
+ notes:""
+ }
+}
+
+function removeLocation(index){
+ locations.splice(index,1)
+ render()
+ calc()
+}
+
+function render(){
+ const c = document.getElementById("locations")
+ c.innerHTML = ""
+
+ locations.forEach((l,i)=>{
+ c.innerHTML += `
+ <div class="location">
+ <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px">
+ <div class="sectionTitle">Location ${i+1}</div>
+ <button class="danger" style="padding:6px 10px;font-size:12px" onclick="removeLocation(${i})">Delete</button>
+ </div>
+
+ <div class="row">
+ <div class="col">
+ <label>Method</label>
+ <select onchange="locations[${i}].method=this.value;render();calc()">
+ <option value="screen" ${l.method==="screen"?"selected":""}>Screen Print</option>
+ <option value="dtf" ${l.method==="dtf"?"selected":""}>DTF</option>
+ <option value="uvdtf" ${l.method==="uvdtf"?"selected":""}>UV DTF</option>
+ <option value="emb" ${l.method==="emb"?"selected":""}>Embroidery</option>
+ <option value="laser" ${l.method==="laser"?"selected":""}>Laser</option>
+ <option value="wovenPatch" ${l.method==="wovenPatch"?"selected":""}>Woven Patch</option>
+ <option value="leatherPatch" ${l.method==="leatherPatch"?"selected":""}>Leather Patch</option>
+ <option value="heatPatch" ${l.method==="heatPatch"?"selected":""}>Heat Press Patch</option>
+ </select>
+ </div>
+
+ ${(l.method==="dtf" || l.method==="uvdtf") ? `
+ <div class="col">
+ <label>Width (in)</label>
+ <input type="number" value="${l.w||10}" oninput="locations[${i}].w=parseFloat(this.value)||0;calc()">
+ </div>
+
+ <div class="col">
+ <label>Height (in)</label>
+ <input type="number" value="${l.h||10}" oninput="locations[${i}].h=parseFloat(this.value)||0;calc()">
+ </div>
+ ` : ''}
+
+ <div class="col">
+ <label>Live?</label>
+ <select onchange="locations[${i}].live=this.value==='true';calc()">
+ <option value="false" ${!l.live?"selected":""}>No</option>
+ <option value="true" ${l.live?"selected":""}>Yes</option>
+ </select>
+ </div>
+ </div>
+
+ <div class="row" style="margin-top:12px">
+ ${l.method==="screen" ? `
+ <div class="col">
+ <label>Number of Colors</label>
+ <input type="number" min="1" max="8" value="${l.colors||1}" oninput="locations[${i}].colors=parseInt(this.value)||1;calc()">
+ </div>
+ ` : ""}
+
+ ${(l.method==="wovenPatch" || l.method==="leatherPatch" || l.method==="heatPatch") ? `
+ <div class="col">
+ <label>Patch Design Count</label>
+ <input type="number" min="1" value="${l.designCount||1}" oninput="locations[${i}].designCount=parseInt(this.value)||1;calc()">
+ </div>
+ ` : ""}
+
+ <div class="col" style="min-width:240px">
+ <label>Notes</label>
+ <input type="text" value="${l.notes||""}" oninput="locations[${i}].notes=this.value;buildEstimateOnly()">
+ </div>
+ </div>
+ </div>
+ `
+ })
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PRICING CALCULATIONS — API-backed with fallback
+   ══════════════════════════════════════════════════════════════ */
+
+function screenCost(qty, colors){
+  if(pricingTables && pricingTables.screen_print){
+    // pricing.json index map: 0=1color, 1=2color, 2=3color, 3=4color, 4=5+ fullcolor (usually null = not available)
+    const ranges = pricingTables.screen_print.rates_by_range || {};
+    const colorIdx = Math.min(Math.max(parseInt(colors)||1, 1), 5) - 1;
+    for(const [rangeKey, rates] of Object.entries(ranges)){
+      const m = rangeKey.match(/^(\d+)-?(\d+|\+)?$/);
+      if(!m || !Array.isArray(rates)) continue;
+      const lo = parseInt(m[1]);
+      const hi = m[2] === '+' ? Infinity : (m[2] ? parseInt(m[2]) : lo);
+      if(qty >= lo && qty <= hi){
+        const r = rates[colorIdx];
+        // null = not available at that color count; fall back to highest available
+        if(r != null) return r;
+        // Walk down to find a valid price (shows best-effort estimate)
+        for(let i = colorIdx - 1; i >= 0; i--){ if(rates[i] != null) return rates[i]; }
+        return 0;
+      }
+    }
+    return 5.88; // fallback for out-of-range (below minimum qty)
+  }
+  // Fallback to hardcoded table
+  const safeColors = Math.min(8, Math.max(1, parseInt(colors)||1));
+  const breaks = [75,100,150,250,500,750,1000,2500,5000];
+  let selected = 75;
+  for(const b of breaks){ if(qty >= b) selected = b; }
+  return FALLBACK_SCREEN[safeColors]?.[selected] || 2.51;
+}
+
+function dtfCost(w, h){
+  if(pricingTables && pricingTables.dtf){
+    const sqin = (parseFloat(w)||0) * (parseFloat(h)||0);
+    return (sqin * (pricingTables.dtf.cost_per_sqin || 0.03)) + (pricingTables.dtf.press_fee_per_location || 1.50);
+  }
+  const sqin = (parseFloat(w)||0) * (parseFloat(h)||0);
+  return (sqin * 0.03) + 1.50;
+}
+
+function uvdtfCost(w, h){
+  if(pricingTables && pricingTables.uvdtf){
+    const sqin = (parseFloat(w)||0) * (parseFloat(h)||0);
+    return (sqin * (pricingTables.uvdtf.cost_per_sqin || 0.05)) + (pricingTables.uvdtf.press_fee_per_location || 1.50);
+  }
+  const sqin = (parseFloat(w)||0) * (parseFloat(h)||0);
+  return (sqin * 0.05) + 1.50;
+}
+
+function laserCost(qty){
+  if(pricingTables && pricingTables.laser){
+    const tiers = pricingTables.laser.tiered_rates || [];
+    for(const tier of tiers){
+      if(qty >= (tier.min_qty || 0)) return tier.rate_per_unit;
+    }
+  }
+  if(qty>=500) return 1.5;
+  if(qty>=250) return 3;
+  if(qty>=100) return 5;
+  return 5;
+}
+
+function embroideryCost(qty, live){
+  if(pricingTables && pricingTables.embroidery){
+    const e = pricingTables.embroidery;
+    if(live) return qty >= 150 ? (e.live_rate_gte_150_units || 15) : (e.live_rate_under_150_units || 20);
+    return e.bulk_rate || 7;
+  }
+  if(live) return qty >= 150 ? 15 : 20;
+  return 7;
+}
+
+function patchCost(qty, designCount){
+  if(pricingTables && pricingTables.patches){
+    const p = pricingTables.patches;
+    const perDesign = qty > 150 ? (p.per_design_rate_gt_150_units || 5) : (p.per_design_rate_lte_150_units || 8);
+    return perDesign * (parseInt(designCount)||1);
+  }
+  const perDesign = qty > 150 ? 5 : 8;
+  return perDesign * (parseInt(designCount)||1);
+}
+
+function locationCostPerUnit(l, qty, eventMode){
+ let price = 0;
+ const isLive = !!l.live || !!eventMode;
+ const liveAddon = pricingTables?.patches?.live_addon_per_unit || 1.50;
+
+ if(l.method==="screen"){
+ price = screenCost(qty, l.colors||1);
+ if(isLive) price += 1.5;
+ }
+
+ if(l.method==="dtf"){
+ price = dtfCost(l.w, l.h);
+ }
+
+ if(l.method==="uvdtf"){
+ price = uvdtfCost(l.w, l.h);
+ }
+
+ if(l.method==="laser"){
+ price = laserCost(qty);
+ }
+
+ if(l.method==="emb"){
+ price = embroideryCost(qty, isLive);
+ }
+
+ if(l.method==="wovenPatch" || l.method==="leatherPatch" || l.method==="heatPatch"){
+ price = patchCost(qty, l.designCount||1);
+ if(isLive) price += liveAddon;
+ }
+
+ return price;
+}
+
+function prettyMethod(l, isLive){
+ const names = {
+ screen:"Screen Print",
+ dtf:"DTF",
+ uvdtf:"UV DTF",
+ laser:"Laser",
+ emb:"Embroidery",
+ wovenPatch:"Woven Patch",
+ leatherPatch:"Leather Patch",
+ heatPatch:"Heat Press Patch"
+ }
+ return `${isLive ? "Live " : "Bulk "}${names[l.method] || l.method}`
+}
+
+function calc(){
+ const qty = parseFloat(document.getElementById("qty").value) || 0
+ const blank = parseFloat(document.getElementById("blank").value) || 0
+ const markup = (parseFloat(document.getElementById("markup").value) || 0) / 100
+ const eventMode = document.getElementById("eventMode").value === "true"
+
+ let decoration = 0
+ let breakdownRows = ""
+
+ locations.forEach((l,i)=>{
+ const isLive = !!l.live || !!eventMode
+ const price = locationCostPerUnit(l,qty,eventMode)
+ decoration += price
+
+ let detail = ""
+ if(l.method==="screen") detail = `${l.colors||1} color`
+ if(l.method==="dtf") detail = `${l.w||0}" x ${l.h||0}" (${((l.w||0)*(l.h||0)).toFixed(0)} sq in)`
+ if(l.method==="uvdtf") detail = `${l.w||0}" x ${l.h||0}" (${((l.w||0)*(l.h||0)).toFixed(0)} sq in)`
+ if(l.method==="wovenPatch" || l.method==="leatherPatch" || l.method==="heatPatch") detail = `${l.designCount||1} design`
+ if(l.method==="emb") detail = isLive ? "live pricing" : "bulk pricing"
+ if(l.method==="laser") detail = `tiered`
+
+ breakdownRows += `
+ <tr>
+ <td>${i+1}</td>
+ <td>${prettyMethod(l,isLive)}</td>
+ <td>${detail}</td>
+ <td>${money(price)}</td>
+ <td style="font-size:11px;color:#94a3b8">${apiConnected?'API':'fallback'}</td>
+ </tr>
+ `
+ })
+
+ const cost = blank + decoration
+ const sell = cost * (1 + markup)
+ const total = sell * qty
+ const profitPerUnit = sell - cost
+ const totalProfit = profitPerUnit * qty
+ const margin = sell > 0 ? ((sell - cost) / sell) * 100 : 0
+
+ let marginClass="marginGood"
+ if(margin<40) marginClass="marginWarn"
+ if(margin<25) marginClass="marginBad"
+
+ const marginEl = document.getElementById("margin")
+ marginEl.innerText = `Margin ${margin.toFixed(1)}%`
+ marginEl.className = "marginBox " + marginClass
+
+ document.getElementById("unitPrice").innerText = money(sell)
+ document.getElementById("grand").innerText = money(total)
+ document.getElementById("costPerUnit").innerText = money(cost)
+ document.getElementById("profitPerUnit").innerText = money(profitPerUnit)
+ document.getElementById("totalProfit").innerText = money(totalProfit)
+ document.getElementById("decorationPerUnit").innerText = money(decoration)
+
+ document.getElementById("breakdownTable").innerHTML = `
+ <tr>
+ <th>#</th>
+ <th>Decoration Type</th>
+ <th>Detail</th>
+ <th>Cost / Unit</th>
+ <th>Source</th>
+ </tr>
+ <tr>
+ <td>-</td>
+ <td>Blank Garment</td>
+ <td>Base blank cost</td>
+ <td>${money(blank)}</td>
+ <td></td>
+ </tr>
+ ${breakdownRows}
+ <tr>
+ <td>-</td>
+ <td><strong>Total Internal Cost</strong></td>
+ <td>Blank + decoration</td>
+ <td><strong>${money(cost)}</strong></td>
+ <td></td>
+ </tr>
+ `
+
+ buildEstimate(qty,sell,cost,totalProfit,eventMode)
+}
+
+function buildEstimate(qty,price,cost,totalProfit,eventMode){
+ let txt = `MERCH TROOP
+
+${qty} Custom Items
+
+Price Per Unit: ${money(price)}
+Total Project: ${money(price * qty)}
+
+DECORATION DETAILS:
+`
+
+ locations.forEach((l,i)=>{
+ const isLive = !!l.live || !!eventMode
+ let line = `Location ${i+1}: ${prettyMethod(l,isLive)}`
+
+ if(l.method==="screen"){
+ line += ` \u2022 ${l.colors||1} color`
+ }
+
+ if(l.method==="dtf" || l.method==="uvdtf"){
+ line += ` \u2022 ${l.w||0}" x ${l.h||0}"`
+ }
+
+ if(l.method==="wovenPatch" || l.method==="leatherPatch" || l.method==="heatPatch"){
+ line += ` \u2022 ${l.designCount||1} design`
+ }
+
+ if(l.method==="emb"){
+ line += ` \u2022 embroidery`
+ }
+
+ if(l.method==="laser"){
+ line += ` \u2022 laser engrave`
+ }
+
+ if(l.notes){
+ line += ` \u2022 ${l.notes}`
+ }
+
+ txt += line + `\n`
+ })
+
+ txt += `
+INCLUDES:
+\u2022 Garment
+\u2022 Decoration
+\u2022 Production
+
+`
+ document.getElementById("estimate").innerText = txt
+}
+
+function buildEstimateOnly(){
+ const qty = parseFloat(document.getElementById("qty").value) || 0
+ const blank = parseFloat(document.getElementById("blank").value) || 0
+ const markup = (parseFloat(document.getElementById("markup").value) || 0) / 100
+ const eventMode = document.getElementById("eventMode").value === "true"
+
+ let decoration = 0
+ locations.forEach(l=>{
+ decoration += locationCostPerUnit(l,qty,eventMode)
+ })
+ const cost = blank + decoration
+ const sell = cost * (1 + markup)
+ const totalProfit = (sell - cost) * qty
+ buildEstimate(qty,sell,cost,totalProfit,eventMode)
+}
+
+function copyEstimate(){
+ navigator.clipboard.writeText(document.getElementById("estimate").innerText)
+}
+
+function copyBreakdown(){
+ let txt = "INTERNAL BREAKDOWN\n\n"
+ const qty = parseFloat(document.getElementById("qty").value) || 0
+ const blank = parseFloat(document.getElementById("blank").value) || 0
+ const eventMode = document.getElementById("eventMode").value === "true"
+
+ txt += `Qty: ${qty}\n`
+ txt += `Blank Cost: ${money(blank)}\n\n`
+
+ locations.forEach((l,i)=>{
+ const isLive = !!l.live || !!eventMode
+ const price = locationCostPerUnit(l,qty,eventMode)
+ txt += `Location ${i+1}: ${prettyMethod(l,isLive)} - ${money(price)} / unit\n`
+ })
+
+ navigator.clipboard.writeText(txt)
+}
+
+render()
+calc()
+</script>
+</body>
+</html>

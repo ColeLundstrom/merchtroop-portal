@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Merch Troop — Task Board</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, system-ui, sans-serif; background: #0a0c14; color: #eef3ff; min-height: 100vh; }
+    a { color: #71f6da; text-decoration: none; }
+    .header { padding: 20px 32px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; }
+    .header h1 { font-size: 1.3rem; font-weight: 800; }
+    .header h1 span { color: #71f6da; }
+    .btn { padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; border: none; transition: transform 0.15s; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background: linear-gradient(135deg, #71f6da, #4ce0c2); color: #0a0c14; }
+    .btn-ghost { background: rgba(255,255,255,0.06); color: #eef3ff; border: 1px solid rgba(255,255,255,0.1); }
+    .btn-sm { padding: 6px 12px; font-size: 0.75rem; }
+
+    .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 24px 32px; }
+    .column { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; min-height: 300px; }
+    .column-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.5); margin-bottom: 12px; display: flex; justify-content: space-between; }
+    .column-title .count { background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 999px; }
+
+    .task-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.2s, transform 0.15s; }
+    .task-card:hover { border-color: #71f6da; transform: translateY(-2px); }
+    .task-card h3 { font-size: 0.9rem; font-weight: 700; margin-bottom: 6px; }
+    .task-card p { font-size: 0.78rem; color: rgba(255,255,255,0.5); line-height: 1.4; margin-bottom: 8px; }
+    .task-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .tag { font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .tag-rosie { background: rgba(167,139,250,0.15); color: #a78bfa; }
+    .tag-claude { background: rgba(113,246,218,0.15); color: #71f6da; }
+    .tag-cole { background: rgba(255,107,53,0.15); color: #ff6b35; }
+    .tag-high { background: rgba(255,107,53,0.15); color: #ff6b35; }
+    .tag-urgent { background: rgba(239,68,68,0.2); color: #ef4444; }
+    .tag-normal { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); }
+    .tag-low { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.3); }
+    .tag-oauth { background: rgba(255,184,107,0.12); color: #ffb86b; font-size: 0.6rem; }
+
+    /* Modal */
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); z-index: 100; display: none; align-items: center; justify-content: center; }
+    .modal-bg.show { display: flex; }
+    .modal { background: #12151f; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px; max-width: 520px; width: calc(100% - 32px); }
+    .modal h2 { font-size: 1.2rem; margin-bottom: 16px; }
+    .modal label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.5); margin-bottom: 4px; margin-top: 12px; }
+    .modal input, .modal select, .modal textarea { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; color: #eef3ff; font-family: inherit; font-size: 0.9rem; }
+    .modal input:focus, .modal select:focus, .modal textarea:focus { outline: none; border-color: #71f6da; }
+    .modal textarea { resize: vertical; min-height: 70px; }
+    .modal select option { background: #12151f; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+    /* Task detail modal */
+    .detail-logs { margin-top: 16px; max-height: 200px; overflow-y: auto; }
+    .log-entry { font-size: 0.78rem; color: rgba(255,255,255,0.5); padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .log-entry strong { color: #71f6da; }
+    .detail-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
+    .filters { padding: 0 32px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .filters label { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 600; }
+
+    @media (max-width: 900px) { .board { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .board { grid-template-columns: 1fr; } .header { padding: 16px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Task <span>Board</span></h1>
+    <button class="btn btn-primary" onclick="openCreate()">+ New Task</button>
+  </div>
+
+  <div class="filters">
+    <label>Filter:</label>
+    <button class="btn btn-ghost btn-sm" onclick="setFilter('all')">All</button>
+    <button class="btn btn-ghost btn-sm" onclick="setFilter('rosie')">Rosie</button>
+    <button class="btn btn-ghost btn-sm" onclick="setFilter('claude')">Claude</button>
+    <button class="btn btn-ghost btn-sm" onclick="setFilter('cole')">Cole</button>
+  </div>
+
+  <div class="board" id="board">
+    <div class="column" data-status="queued">
+      <div class="column-title">Queued <span class="count" id="count-queued">0</span></div>
+      <div id="col-queued"></div>
+    </div>
+    <div class="column" data-status="in_progress">
+      <div class="column-title">In Progress <span class="count" id="count-in_progress">0</span></div>
+      <div id="col-in_progress"></div>
+    </div>
+    <div class="column" data-status="review">
+      <div class="column-title">Review <span class="count" id="count-review">0</span></div>
+      <div id="col-review"></div>
+    </div>
+    <div class="column" data-status="done">
+      <div class="column-title">Done <span class="count" id="count-done">0</span></div>
+      <div id="col-done"></div>
+    </div>
+  </div>
+
+  <!-- Create modal -->
+  <div class="modal-bg" id="createModal">
+    <div class="modal">
+      <h2>New Task</h2>
+      <label>Title</label>
+      <input id="newTitle" placeholder="What needs to be done?" />
+      <label>Description</label>
+      <textarea id="newDesc" placeholder="Details, links, context..."></textarea>
+      <label>Assignee</label>
+      <select id="newAssignee">
+        <option value="rosie">Rosie</option>
+        <option value="claude">Claude</option>
+        <option value="cole">Cole</option>
+        <option value="unassigned">Unassigned</option>
+      </select>
+      <label>Priority</label>
+      <select id="newPriority">
+        <option value="normal">Normal</option>
+        <option value="high">High</option>
+        <option value="urgent">Urgent</option>
+        <option value="low">Low</option>
+      </select>
+      <label>Project</label>
+      <input id="newProject" placeholder="e.g. website, estimates, emails" />
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="createTask()">Create</button>
+        <button class="btn btn-ghost" onclick="closeCreate()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail modal -->
+  <div class="modal-bg" id="detailModal">
+    <div class="modal" style="max-width:600px;">
+      <h2 id="detailTitle"></h2>
+      <p id="detailDesc" style="color:rgba(255,255,255,0.6);line-height:1.5;margin-bottom:8px;"></p>
+      <div class="task-meta" id="detailMeta"></div>
+      <div class="detail-actions" id="detailActions"></div>
+      <div class="detail-logs" id="detailLogs"></div>
+      <div class="modal-actions" style="margin-top:16px;">
+        <button class="btn btn-ghost" onclick="closeDetail()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = window.location.origin + '/api/tasks';
+    let allTasks = [];
+    let filterAssignee = 'all';
+    let currentTaskId = null;
+
+    async function load() {
+      const r = await fetch(API);
+      const d = await r.json();
+      allTasks = d.tasks || [];
+      render();
+    }
+
+    function render() {
+      const statuses = ['queued', 'in_progress', 'review', 'done'];
+      statuses.forEach(s => {
+        const col = document.getElementById('col-' + s);
+        const tasks = allTasks.filter(t => t.status === s && (filterAssignee === 'all' || t.assignee === filterAssignee));
+        document.getElementById('count-' + s).textContent = tasks.length;
+        col.innerHTML = tasks.map(t => `
+          <div class="task-card" onclick="openDetail('${t.id}')">
+            <h3>${esc(t.title)}</h3>
+            ${t.description ? `<p>${esc(t.description).slice(0, 100)}${t.description.length > 100 ? '...' : ''}</p>` : ''}
+            <div class="task-meta">
+              <span class="tag tag-${t.assignee}">${t.assignee}</span>
+              <span class="tag tag-${t.priority}">${t.priority}</span>
+              ${t.oauthOnly ? '<span class="tag tag-oauth">oauth only</span>' : ''}
+              ${t.project ? `<span class="tag tag-normal">${esc(t.project)}</span>` : ''}
+            </div>
+          </div>
+        `).join('');
+      });
+    }
+
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    function setFilter(a) { filterAssignee = a; render(); }
+
+    function openCreate() { document.getElementById('createModal').classList.add('show'); }
+    function closeCreate() { document.getElementById('createModal').classList.remove('show'); }
+
+    async function createTask() {
+      const body = {
+        title: document.getElementById('newTitle').value,
+        description: document.getElementById('newDesc').value,
+        assignee: document.getElementById('newAssignee').value,
+        priority: document.getElementById('newPriority').value,
+        project: document.getElementById('newProject').value,
+        createdBy: 'cole',
+      };
+      if (!body.title) return alert('Title required');
+      await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      closeCreate();
+      document.getElementById('newTitle').value = '';
+      document.getElementById('newDesc').value = '';
+      document.getElementById('newProject').value = '';
+      load();
+    }
+
+    function openDetail(id) {
+      const t = allTasks.find(x => x.id === id);
+      if (!t) return;
+      currentTaskId = id;
+      document.getElementById('detailTitle').textContent = t.title;
+      document.getElementById('detailDesc').textContent = t.description || 'No description';
+      document.getElementById('detailMeta').innerHTML = `
+        <span class="tag tag-${t.assignee}">${t.assignee}</span>
+        <span class="tag tag-${t.priority}">${t.priority}</span>
+        ${t.oauthOnly ? '<span class="tag tag-oauth">oauth only</span>' : ''}
+        ${t.project ? `<span class="tag tag-normal">${esc(t.project)}</span>` : ''}
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.3);">Created ${new Date(t.createdAt).toLocaleDateString()}</span>
+      `;
+
+      const statuses = ['queued', 'in_progress', 'review', 'done', 'cancelled'];
+      document.getElementById('detailActions').innerHTML = statuses.filter(s => s !== t.status).map(s =>
+        `<button class="btn btn-ghost btn-sm" onclick="updateStatus('${id}','${s}')">${s.replace('_', ' ')}</button>`
+      ).join('') + `<button class="btn btn-ghost btn-sm" style="color:#ef4444;" onclick="deleteTask('${id}')">Delete</button>`;
+
+      document.getElementById('detailLogs').innerHTML = (t.logs || []).reverse().map(l =>
+        `<div class="log-entry"><strong>${l.by}</strong> ${l.action || ''} <span style="float:right;font-size:0.7rem;">${new Date(l.at).toLocaleString()}</span></div>`
+      ).join('');
+
+      document.getElementById('detailModal').classList.add('show');
+    }
+
+    function closeDetail() { document.getElementById('detailModal').classList.remove('show'); currentTaskId = null; }
+
+    async function updateStatus(id, status) {
+      await fetch(API + '/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, by: 'cole' }),
+      });
+      closeDetail();
+      load();
+    }
+
+    async function deleteTask(id) {
+      if (!confirm('Delete this task?')) return;
+      await fetch(API + '/' + id, { method: 'DELETE' });
+      closeDetail();
+      load();
+    }
+
+    // Auto-refresh every 30s
+    setInterval(load, 30000);
+    load();
+
+    // Close modals on Escape
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { closeCreate(); closeDetail(); }
+    });
+    document.getElementById('createModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeCreate(); });
+    document.getElementById('detailModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDetail(); });
+  </script>
+</body>
+</html>

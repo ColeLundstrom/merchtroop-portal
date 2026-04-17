@@ -1,0 +1,3173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Merch Troop · Ops</title>
+  <style>
+    :root {
+      --bg:        #0b0f1a;
+      --surface:   #111827;
+      --surface2:  #161e30;
+      --border:    rgba(255,255,255,.08);
+      --text:      #e8edf5;
+      --muted:     #64748b;
+      --urgent:    #ef4444;
+      --attention: #f59e0b;
+      --normal:    #3b82f6;
+      --ok:        #22c55e;
+      --brand:     #ff9100;
+      --r:         8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      line-height: 1.45;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .hTop {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0 8px;
+      flex-wrap: wrap;
+    }
+    .brand { font-size: 17px; font-weight: 800; color: var(--brand); flex-shrink: 0; }
+    .hStats { display: flex; gap: 14px; flex: 1; }
+    .hStat { font-size: 13px; color: var(--muted); white-space: nowrap; }
+    .hStat.s-urgent  { color: var(--urgent); font-weight: 700; }
+    .hStat.s-mine    { color: var(--ok); }
+    .hRight { display: flex; gap: 8px; align-items: center; }
+
+    /* ── Tabs ───────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      padding: 8px 0 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .tabBtn {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color .12s;
+      font-family: inherit;
+    }
+    .tabBtn:hover { color: var(--text); }
+    .tabBtn.active { color: var(--brand); border-bottom-color: var(--brand); }
+
+    /* ── Filter bar ─────────────────────────────────────── */
+    .filterBar {
+      display: flex;
+      gap: 10px;
+      padding: 10px 0 11px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .pills { display: flex; gap: 5px; flex-wrap: wrap; }
+    .pill {
+      font-size: 13px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .12s;
+      font-family: inherit;
+    }
+    .pill:hover { color: var(--text); border-color: rgba(255,255,255,.18); }
+    .pill.active { background: rgba(255,145,0,.14); border-color: rgba(255,145,0,.5); color: var(--text); }
+    .searchInput {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      border-radius: var(--r);
+      padding: 6px 12px;
+      font-size: 13px;
+      width: 190px;
+    }
+    .searchInput::placeholder { color: var(--muted); }
+    .searchInput:focus        { outline: none; border-color: rgba(255,255,255,.2); }
+    .searchInput:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-color: transparent; }
+    .userSelect {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: var(--r);
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    /* ── Buttons ─────────────────────────────────────────── */
+    .btn {
+      font-size: 13px;
+      padding: 7px 14px;
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      cursor: pointer;
+      transition: all .12s;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .btn:hover { background: rgba(255,255,255,.1); }
+    .btn.primary { background: var(--brand); color: #000; border-color: transparent; font-weight: 700; }
+    .btn.primary:hover { filter: brightness(1.06); }
+    .btn.b-claim   { background: rgba(59,130,246,.12); border-color: rgba(59,130,246,.38); color: #93c5fd; }
+    .btn.b-claim:hover { background: rgba(59,130,246,.22); }
+    .btn.b-done    { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.35); color: #86efac; font-weight: 600; }
+    .btn.b-done:hover { background: rgba(34,197,94,.2); }
+    .btn.b-snooze  { background: transparent; border-color: var(--border); color: var(--muted); }
+    .btn.b-snooze:hover { color: var(--text); }
+    .btn.b-unclaim { background: transparent; border-color: var(--border); color: var(--muted); }
+    .btn.sm { padding: 5px 11px; font-size: 12px; }
+
+    /* ── Main ───────────────────────────────────────────── */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px 80px;
+    }
+    .tabPane { display: none; }
+    .tabPane.active { display: block; }
+
+    /* ── Focus strip ────────────────────────────────────── */
+    .focusStrip {
+      background: rgba(239,68,68,.07);
+      border: 1px solid rgba(239,68,68,.2);
+      border-radius: var(--r);
+      padding: 12px 16px;
+      margin-bottom: 20px;
+    }
+    .focusLabel {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .7px;
+      text-transform: uppercase;
+      color: var(--urgent);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .focusDot { width: 6px; height: 6px; border-radius: 999px; background: var(--urgent); display: inline-block; }
+    .focusList { display: flex; flex-direction: column; gap: 6px; }
+    .focusItem {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(239,68,68,.06);
+      border: 1px solid rgba(239,68,68,.15);
+      border-radius: 6px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: background .12s;
+    }
+    .focusItem:hover { background: rgba(239,68,68,.12); }
+    .focusTask { flex: 1; font-size: 14px; font-weight: 600; color: var(--text); }
+    .focusMeta { font-size: 12px; color: var(--muted); }
+    .focusAction { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* ── Section headers ────────────────────────────────── */
+    .section { margin-bottom: 24px; }
+    .sHead {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 10px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .7px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .sDot { width: 7px; height: 7px; border-radius: 999px; display: inline-block; flex-shrink: 0; }
+    .sHead.urgent    .sDot { background: var(--urgent); }
+    .sHead.attention .sDot { background: var(--attention); }
+    .sHead.normal    .sDot { background: var(--normal); }
+    .sCount { background: rgba(255,255,255,.07); border-radius: 999px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+
+    /* ── Task cards ─────────────────────────────────────── */
+    .taskList { display: flex; flex-direction: column; gap: 5px; }
+    .taskCard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+      position: relative;
+      transition: border-color .12s;
+    }
+    .taskCard:hover { border-color: rgba(255,255,255,.14); }
+    .taskCard::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      border-radius: 3px 0 0 3px;
+    }
+    .taskCard.urgent::before    { background: var(--urgent); }
+    .taskCard.attention::before { background: var(--attention); }
+    .taskCard.normal::before    { background: var(--normal); }
+
+    .cTop {
+      display: flex;
+      gap: 12px;
+      padding: 13px 14px 0 18px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .cInfo { flex: 1; min-width: 0; }
+    .cTask {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1.25;
+    }
+    .cMeta { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cRight {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 5px;
+      flex-shrink: 0;
+      padding-top: 1px;
+    }
+    .waitBadge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+    .w-hot  { background: rgba(239,68,68,.1);   border-color: rgba(239,68,68,.4);  color: #fca5a5; }
+    .w-warm { background: rgba(245,158,11,.1);  border-color: rgba(245,158,11,.4); color: #fcd34d; }
+    .w-new  { background: rgba(255,255,255,.05); border-color: var(--border);      color: var(--muted); }
+    .slaBadge {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .sla-overdue  { background: rgba(239,68,68,.15); border-color: rgba(239,68,68,.4);  color: #fca5a5; font-weight: 700; }
+    .sla-dueSoon  { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.4); color: #fcd34d; }
+    .sla-onTrack  { color: var(--muted); }
+    .assignBadge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .assignBadge.me { border-color: rgba(34,197,94,.4); color: #86efac; background: rgba(34,197,94,.08); }
+
+    .cActions {
+      display: flex;
+      gap: 7px;
+      padding: 9px 14px 11px 18px;
+      align-items: center;
+    }
+    .cSpacer { flex: 1; }
+
+    /* ── Expanded detail ────────────────────────────────── */
+    .cDetail {
+      border-top: 1px solid var(--border);
+      padding: 14px 14px 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    /* Pipeline stepper */
+    .pipeline { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; }
+    .pStep { font-size: 11px; padding: 3px 8px; border-radius: 4px; white-space: nowrap; }
+    .pStep.done { color: rgba(100,116,139,.4); }
+    .pStep.cur  { color: var(--text); background: rgba(255,145,0,.14); border: 1px solid rgba(255,145,0,.4); font-weight: 700; }
+    .pStep.todo { color: rgba(100,116,139,.5); }
+    .pArrow     { font-size: 10px; color: rgba(100,116,139,.35); padding: 0 1px; }
+
+    /* Notes */
+    .dNotes { font-size: 13px; color: var(--muted); white-space: pre-wrap; line-height: 1.5; }
+
+    /* How to do this */
+    .howToggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      letter-spacing: .2px;
+    }
+    .howToggle:hover { color: var(--text); }
+    .howArrow { font-size: 10px; transition: transform .15s; }
+    .howArrow.open { transform: rotate(90deg); }
+    .howSteps {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 12px;
+      background: rgba(255,255,255,.03);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .howSteps.open { display: flex; }
+    .howStep {
+      display: flex;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .howNum { color: var(--brand); font-weight: 700; flex-shrink: 0; min-width: 18px; }
+
+    /* Quick links */
+    .quickLinks { display: flex; gap: 8px; flex-wrap: wrap; }
+    .qLink {
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: var(--r);
+      border: 1px solid rgba(59,130,246,.35);
+      background: rgba(59,130,246,.08);
+      color: #93c5fd;
+      text-decoration: none;
+      transition: background .12s;
+    }
+    .qLink:hover { background: rgba(59,130,246,.18); }
+
+    /* Complete row */
+    .completeRow { display: flex; gap: 8px; align-items: flex-start; }
+    .noteInput {
+      flex: 1;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      border-radius: var(--r);
+      padding: 8px 12px;
+      font-size: 13px;
+      resize: none;
+      font-family: inherit;
+      line-height: 1.4;
+      min-height: 38px;
+    }
+    .noteInput::placeholder { color: var(--muted); }
+    .noteInput:focus        { outline: none; border-color: rgba(255,255,255,.2); }
+    .noteInput:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-color: transparent; }
+
+    /* ── History tab ────────────────────────────────────── */
+    .historyDay { margin-bottom: 20px; }
+    .historyDate {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .historyList { display: flex; flex-direction: column; gap: 4px; }
+    .historyItem {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 10px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      border-left: 3px solid var(--ok);
+    }
+    .histCheck { color: var(--ok); font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .histInfo { flex: 1; min-width: 0; }
+    .histTask { font-size: 14px; font-weight: 600; color: var(--text); }
+    .histMeta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .histNote { font-size: 12px; color: rgba(233,238,245,.6); margin-top: 4px; font-style: italic; }
+    .histTime { font-size: 11px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+
+    /* ── Empty states ───────────────────────────────────── */
+    .emptyState {
+      text-align: center;
+      color: var(--muted);
+      padding: 60px 20px;
+    }
+    .emptyState strong { color: var(--ok); display: block; font-size: 22px; margin-bottom: 8px; }
+
+    /* ── Modals ─────────────────────────────────────────── */
+    .mBack { position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 50; }
+    .modal {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(480px, 94vw);
+      background: #131e30;
+      border: 1px solid rgba(255,255,255,.13);
+      border-radius: 12px;
+      padding: 22px;
+      z-index: 51;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal h3 { font-size: 16px; font-weight: 700; }
+    .modal p  { font-size: 13px; color: var(--muted); }
+    .mInput, .mSelect, .mTextarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      border-radius: var(--r);
+      padding: 10px 12px;
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+    }
+    .mInput::placeholder, .mTextarea::placeholder { color: var(--muted); }
+    .mInput:focus, .mSelect:focus, .mTextarea:focus { border-color: rgba(255,255,255,.2); }
+    .mTextarea { min-height: 80px; resize: vertical; }
+    .mRow  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .mActions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+    .mLabel { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: -6px; }
+    .calcModal {
+      width: min(960px, 96vw);
+      height: min(720px, 92vh);
+      padding: 0;
+      overflow: hidden;
+    }
+    .calcHead { display: flex; justify-content: space-between; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--border); }
+    .calcHead h3 { font-size: 15px; font-weight: 700; }
+    .calcFrame { width: 100%; height: calc(100% - 50px); border: 0; background: #fff; }
+
+    /* ── Snooze popover ─────────────────────────────────── */
+    .snoozeMenu {
+      position: absolute;
+      right: 14px;
+      bottom: calc(100% + 4px);
+      background: #1a2540;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 8px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 30;
+      min-width: 140px;
+    }
+    .snoozeOpt {
+      font-size: 13px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      text-align: left;
+      font-family: inherit;
+      transition: background .1s;
+    }
+    .snoozeOpt:hover { background: rgba(255,255,255,.07); }
+
+    /* ── Toasts ─────────────────────────────────────────── */
+    .toasts { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 200; pointer-events: none; }
+    .toast { background: #1a2540; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; padding: 10px 16px; font-size: 13px; color: var(--text); animation: slideUp .18s ease; }
+    .toast.ok  { border-color: rgba(34,197,94,.5); }
+    .toast.err { border-color: rgba(239,68,68,.5); color: #fca5a5; }
+    @keyframes slideUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: none; } }
+
+    /* ── Schedule / Events ──────────────────────────────── */
+    .evGrid { display: flex; flex-direction: column; gap: 12px; }
+    .evCard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+      transition: border-color .12s;
+    }
+    .evCard:hover { border-color: rgba(255,255,255,.14); }
+    .evCard.full  { opacity: .65; }
+    .evCard.past  { opacity: .5; }
+
+    .evTop {
+      display: flex;
+      gap: 14px;
+      padding: 16px 16px 0;
+      align-items: flex-start;
+    }
+    .evMain { flex: 1; min-width: 0; }
+    .evName { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 3px; line-height: 1.25; }
+    .evClient { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+    .evBadge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .3px; padding: 2px 7px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+    .evBadge.paid { background: rgba(34,197,94,.15); color: #86efac; border: 1px solid rgba(34,197,94,.3); }
+    .evBadge.unpaid { background: rgba(251,191,36,.12); color: #fbbf24; border: 1px solid rgba(251,191,36,.3); }
+    .evMeta { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .evRow { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--muted); }
+    .evIcon { flex-shrink: 0; font-size: 13px; width: 18px; text-align: center; }
+    .evRowText { color: var(--text); }
+
+    .evDateBadge {
+      flex-shrink: 0;
+      text-align: center;
+      background: rgba(255,145,0,.12);
+      border: 1px solid rgba(255,145,0,.3);
+      border-radius: var(--r);
+      padding: 8px 12px;
+      min-width: 56px;
+    }
+    .evDateMonth { font-size: 11px; font-weight: 700; color: var(--brand); letter-spacing: .5px; text-transform: uppercase; }
+    .evDateDay   { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1.1; }
+    .evDateDow   { font-size: 11px; color: var(--muted); }
+
+    .evStaffRow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .staffDots { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+    .sDot {
+      width: 32px; height: 32px;
+      border-radius: 999px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .sDot.filled           { background: rgba(34,197,94,.18);  border: 1px solid rgba(34,197,94,.4);  color: #86efac; }
+    .sDot.filled.accepted  { background: rgba(34,197,94,.28);  border: 2px solid rgba(34,197,94,.7);  color: #4ade80; }
+    .sDot.filled.declined  { background: rgba(239,68,68,.18);  border: 1px solid rgba(239,68,68,.5);  color: #fca5a5; text-decoration: line-through; }
+    .sDot.filled.tentative { background: rgba(245,158,11,.18); border: 1px solid rgba(245,158,11,.5); color: #fcd34d; }
+    .sDot.empty  { background: rgba(255,255,255,.05); border: 2px dashed rgba(255,255,255,.15); color: var(--muted); }
+    .staffLabel  { font-size: 13px; color: var(--muted); white-space: nowrap; }
+    .staffLabel strong { color: var(--text); }
+    .spotsChip {
+      font-size: 12px; font-weight: 700;
+      padding: 3px 10px; border-radius: 999px; border: 1px solid;
+      white-space: nowrap; margin-left: auto;
+    }
+    .spotsChip.open { background: rgba(34,197,94,.1);   border-color: rgba(34,197,94,.4);  color: #86efac; }
+    .spotsChip.low  { background: rgba(245,158,11,.1);  border-color: rgba(245,158,11,.4); color: #fcd34d; }
+    .spotsChip.full { background: rgba(100,116,139,.1); border-color: rgba(100,116,139,.3); color: var(--muted); }
+
+    .evActions { padding: 12px 16px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); }
+    .evNotes   { font-size: 12px; color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Claim form */
+    .claimForm {
+      border-top: 1px solid var(--border);
+      padding: 16px;
+      background: rgba(34,197,94,.04);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .claimTitle { font-size: 14px; font-weight: 700; color: var(--ok); margin-bottom: 2px; }
+    .claimSub   { font-size: 12px; color: var(--muted); margin-top: -6px; }
+    .claimInputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .claimActions { display: flex; gap: 8px; }
+    .claimNote  { font-size: 12px; color: var(--muted); }
+    .claimSuccess {
+      text-align: center;
+      padding: 16px;
+      color: var(--ok);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    /* Add event modal */
+    .mGrid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .schedHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .schedTitle { font-size: 16px; font-weight: 700; }
+    .schedFilters { display: flex; gap: 6px; }
+
+    /* ── VA Inbox ─────────────────────────────────────────── */
+    .vaInboxWrap { padding: 16px 20px; max-width: 900px; }
+    .vaInboxHeader { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .vaTitle { font-size: 18px; font-weight: 700; color: var(--text); }
+    .vaMuted { font-size: 12px; color: var(--muted); }
+    .vaDraftCard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .vaDraftCard.urgent { border-left: 3px solid var(--urgent); }
+    .vaDraftCard.estimate { border-left: 3px solid var(--ok); }
+    .vaDraftCard.reply { border-left: 3px solid var(--normal); }
+    .vaCardTop { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+    .vaCardBadge {
+      font-size: 11px; font-weight: 700; padding: 2px 8px;
+      border-radius: 4px; white-space: nowrap; flex-shrink: 0;
+    }
+    .vaCardBadge.estimate { background: rgba(34,197,94,.15); color: var(--ok); }
+    .vaCardBadge.reply { background: rgba(59,130,246,.15); color: var(--normal); }
+    .vaCardBadge.urgent { background: rgba(239,68,68,.15); color: var(--urgent); }
+    .vaCardClient { font-size: 15px; font-weight: 600; color: var(--text); flex: 1; }
+    .vaCardMeta { font-size: 12px; color: var(--muted); margin-bottom: 8px; display: flex; gap: 14px; flex-wrap: wrap; }
+    .vaCardTotal { font-size: 16px; font-weight: 700; color: var(--ok); }
+    .vaCardFlags { margin-bottom: 10px; }
+    .vaCardFlag { font-size: 12px; color: var(--attention); margin-bottom: 2px; }
+    .vaCardActions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .vaBtnSent {
+      background: var(--ok); color: #000; border: none;
+      padding: 6px 14px; border-radius: 5px; font-size: 13px;
+      font-weight: 600; cursor: pointer;
+    }
+    .vaBtnSent:hover { opacity: 0.85; }
+    .vaBtnDismiss {
+      background: transparent; color: var(--muted); border: 1px solid var(--border);
+      padding: 6px 14px; border-radius: 5px; font-size: 13px; cursor: pointer;
+    }
+    .vaBtnDismiss:hover { color: var(--text); }
+    .vaEmpty { color: var(--muted); font-size: 14px; padding: 40px 0; text-align: center; }
+
+    /* ── Focus visibility ───────────────────────────────── */
+    .btn:focus-visible, .pill:focus-visible, .tabBtn:focus-visible,
+    .snoozeOpt:focus-visible, .vaBtnSent:focus-visible, .vaBtnDismiss:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+    }
+    .mInput:focus, .mSelect:focus, .mTextarea:focus { outline: none; border-color: rgba(255,255,255,.22); }
+    .mInput:focus-visible, .mSelect:focus-visible, .mTextarea:focus-visible {
+      outline: 2px solid var(--brand); outline-offset: 2px; border-color: transparent;
+    }
+
+    /* ── Header KPIs ─────────────────────────────────────── */
+    .hKpis { display: flex; gap: 20px; flex: 1; flex-wrap: wrap; align-items: center; }
+    .hKpi  { display: flex; flex-direction: column; gap: 1px; }
+    .hKpiVal {
+      font-size: 15px; font-weight: 800; color: var(--text); white-space: nowrap; line-height: 1.1;
+    }
+    .hKpiVal.k-red    { color: var(--urgent); }
+    .hKpiVal.k-yellow { color: var(--attention); }
+    .hKpiVal.k-green  { color: var(--ok); }
+    .hKpiLabel { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+    /* ── Today's Queue ───────────────────────────────────── */
+    .todayQueue {
+      background: rgba(239,68,68,.06);
+      border: 1px solid rgba(239,68,68,.18);
+      border-radius: var(--r);
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    .tqLabel {
+      font-size: 11px; font-weight: 800; letter-spacing: .7px;
+      text-transform: uppercase; color: var(--urgent);
+      display: flex; align-items: center; gap: 7px; margin-bottom: 10px;
+    }
+    .tqDot { width: 6px; height: 6px; border-radius: 999px; background: var(--urgent); display: inline-block; }
+    .tqList { display: flex; flex-direction: column; gap: 6px; }
+    .tqItem {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(239,68,68,.05); border: 1px solid rgba(239,68,68,.13);
+      border-radius: 6px; padding: 10px 12px; cursor: pointer;
+      transition: background .12s;
+    }
+    .tqItem:hover { background: rgba(239,68,68,.11); }
+    .tqMain { flex: 1; min-width: 0; }
+    .tqTask { font-size: 14px; font-weight: 600; color: var(--text); }
+    .tqMeta { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .tqRev  { font-size: 13px; font-weight: 700; color: var(--ok); white-space: nowrap; }
+    .tqRevBig { color: #4ade80; font-size: 14px; }
+    .tqActs { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* ── Revenue badge on card ───────────────────────────── */
+    .revBadge {
+      font-size: 13px; font-weight: 700; color: var(--ok); white-space: nowrap;
+      padding: 2px 8px; border-radius: 999px;
+      background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3);
+    }
+    .revBadge.rev-big {
+      color: #4ade80; background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.5);
+      font-size: 14px;
+    }
+
+    /* ── Blocked-by badge ────────────────────────────────── */
+    .blockedBadge {
+      font-size: 11px; font-weight: 700; padding: 2px 8px;
+      border-radius: 4px; white-space: nowrap;
+      background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.35);
+      color: #fcd34d;
+    }
+    /* ── Payment required badge ──────────────────────────── */
+    .payBadge {
+      font-size: 11px; font-weight: 700; padding: 2px 8px;
+      border-radius: 4px; white-space: nowrap;
+      background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.4);
+      color: #fca5a5;
+    }
+    .taskCard.pay-warn { border-color: rgba(239,68,68,.25); }
+    .taskCard.pay-warn::before { background: rgba(239,68,68,.5) !important; }
+
+    /* ── Card hint (first instruction) ──────────────────── */
+    .cardHint {
+      font-size: 12px; color: var(--muted); margin-top: 4px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* ── Action Center panel ─────────────────────────────── */
+    .acOverlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 60;
+    }
+    .acPanel {
+      position: fixed; right: 0; top: 0; bottom: 0; width: min(440px, 95vw);
+      background: #0f1825; border-left: 1px solid rgba(255,255,255,.1);
+      z-index: 61; display: flex; flex-direction: column;
+      overflow: hidden; animation: slideRight .2s ease;
+    }
+    @keyframes slideRight { from { transform: translateX(100%); } to { transform: none; } }
+    .acHead {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .acHead h3 { font-size: 15px; font-weight: 700; }
+    .acBody { flex: 1; overflow-y: auto; padding: 12px 16px; }
+    .acItem {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 12px 14px; margin-bottom: 8px;
+    }
+    .acItem.ac-success { border-left: 3px solid var(--ok); }
+    .acItem.ac-failed  { border-left: 3px solid var(--urgent); }
+    .acItemTop { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 6px; }
+    .acBadge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+    .acBadge.ok  { background: rgba(34,197,94,.15); color: var(--ok); }
+    .acBadge.err { background: rgba(239,68,68,.15); color: #fca5a5; }
+    .acItemTitle { font-size: 13px; font-weight: 600; flex: 1; }
+    .acItemMeta  { font-size: 12px; color: var(--muted); }
+    .acItemOutput {
+      font-size: 12px; color: rgba(233,238,245,.65);
+      white-space: pre-wrap; line-height: 1.45; margin-top: 8px;
+      padding: 8px 10px; background: rgba(255,255,255,.03);
+      border-radius: 5px; border: 1px solid var(--border);
+      max-height: 120px; overflow-y: auto;
+    }
+    .acEmpty { text-align: center; color: var(--muted); padding: 40px 0; font-size: 14px; }
+
+    /* ── Confirm modal ───────────────────────────────────── */
+    .confirmList {
+      font-size: 13px; color: var(--muted);
+      background: rgba(255,255,255,.03); border: 1px solid var(--border);
+      border-radius: 6px; padding: 10px 14px; max-height: 140px; overflow-y: auto;
+    }
+    .confirmList li { margin-bottom: 3px; }
+    .undoBar {
+      position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+      background: #1a2540; border: 1px solid rgba(255,255,255,.18);
+      border-radius: 8px; padding: 10px 16px; font-size: 13px;
+      display: flex; align-items: center; gap: 12px; z-index: 100;
+      animation: slideUp .18s ease;
+    }
+    .undoBtn { color: var(--brand); font-weight: 700; cursor: pointer; border: none; background: none; font-size: 13px; font-family: inherit; }
+    .undoTimer { font-size: 12px; color: var(--muted); }
+
+    /* ── Skeleton loading ────────────────────────────────── */
+    .skeletonCard {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 16px 18px; margin-bottom: 5px;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    .skeletonLine {
+      height: 14px; background: rgba(255,255,255,.07);
+      border-radius: 4px; margin-bottom: 8px;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+
+    /* ── Guided empty/error states ───────────────────────── */
+    .stateBlock {
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; padding: 48px 24px; gap: 8px;
+    }
+    .stateIcon  { font-size: 28px; margin-bottom: 4px; }
+    .stateTitle { font-size: 15px; font-weight: 700; color: var(--text); }
+    .stateBody  { font-size: 13px; color: var(--muted); max-width: 320px; line-height: 1.5; }
+    .stateCta   { margin-top: 6px; }
+
+    /* ── GHL Sync ────────────────────────────────────────── */
+    .syncWrap { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .syncLabel { font-size: 10px; color: var(--muted); white-space: nowrap; }
+    .syncLabel.syncing { color: var(--attention); }
+
+    /* ── Triage inbox ────────────────────────────────────── */
+    .triageSection {
+      background: rgba(59,130,246,.06); border: 1px solid rgba(59,130,246,.18);
+      border-radius: var(--r); padding: 14px 16px; margin-bottom: 20px;
+    }
+    .triageLabel { font-size:11px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--normal);display:flex;align-items:center;gap:7px;margin-bottom:10px; }
+    .triageDot { width:6px;height:6px;border-radius:999px;background:var(--normal);display:inline-block; }
+    .triageList { display:flex;flex-direction:column;gap:6px; }
+    .triageItem { display:flex;align-items:flex-start;gap:12px;background:rgba(59,130,246,.04);border:1px solid rgba(59,130,246,.12);border-radius:6px;padding:10px 12px; }
+    .triageMain { flex:1;min-width:0; }
+    .triageSubject { font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .triageMeta { font-size:12px;color:var(--muted);margin-top:2px; }
+    .triageActs { display:flex;gap:6px;flex-shrink:0; }
+
+    /* ── Kanban ──────────────────────────────────────────── */
+    .kanbanWrap { overflow-x:auto;padding-bottom:20px; }
+    .kanbanTrack { display:flex;gap:12px;min-width:max-content;padding:4px 0; }
+    .kanbanCol { width:210px;flex-shrink:0;display:flex;flex-direction:column; }
+    .kanbanHead { font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);padding:0 4px 8px;display:flex;align-items:center;gap:6px;border-bottom:2px solid var(--border);margin-bottom:8px; }
+    .kanbanCnt { background:rgba(255,255,255,.07);border-radius:999px;padding:1px 7px;font-size:11px; }
+    .kanbanCards { display:flex;flex-direction:column;gap:6px;flex:1; }
+    .kanbanCard { background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 12px;cursor:pointer;transition:border-color .12s;position:relative;overflow:hidden; }
+    .kanbanCard:hover { border-color:rgba(255,255,255,.18); }
+    .kanbanCard::before { content:'';position:absolute;left:0;top:0;bottom:0;width:2px; }
+    .kanbanCard.urgent::before { background:var(--urgent); }
+    .kanbanCard.attention::before { background:var(--attention); }
+    .kanbanCard.normal::before { background:var(--normal); }
+    .kanbanCard.pay-warn { border-color:rgba(239,68,68,.22); }
+    .kcName { font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .kcJob { font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px; }
+    .kcFoot { display:flex;align-items:center;justify-content:space-between;margin-top:6px; }
+    .kcRev { font-size:11px;font-weight:700;color:var(--ok); }
+    .kcDue { font-size:11px;color:var(--muted); }
+    .kanbanEmpty { font-size:12px;color:rgba(100,116,139,.3);text-align:center;padding:12px 0;font-style:italic; }
+
+    /* ── Inline edit ─────────────────────────────────────── */
+    .editForm { display:flex;flex-direction:column;gap:10px;padding:12px 0;border-top:1px solid var(--border);margin-top:8px; }
+    .editRow { display:flex;align-items:flex-start;gap:8px; }
+    .editLabel { font-size:12px;color:var(--muted);width:80px;flex-shrink:0;padding-top:8px; }
+    .editInput { flex:1;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit; }
+    .editInput:focus { outline:2px solid var(--brand);outline-offset:2px;border-color:transparent; }
+    .editNotesInput { flex:1;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);border-radius:6px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;line-height:1.4; }
+    .editNotesInput:focus { outline:2px solid var(--brand);outline-offset:2px;border-color:transparent; }
+    .editActions { display:flex;gap:8px;margin-top:4px; }
+
+    /* ── GHL Estimate inline ─────────────────────────────── */
+    .estInline { background:rgba(34,197,94,.04);border:1px solid rgba(34,197,94,.15);border-radius:6px;padding:10px 12px;margin-top:4px; }
+    .estLabel { font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--ok);margin-bottom:6px; }
+    .estRow { display:flex;gap:8px;font-size:12px;align-items:baseline;margin-bottom:3px; }
+    .estKey { color:var(--muted);min-width:70px;flex-shrink:0; }
+    .estVal { color:var(--text); }
+
+    /* ── Event↔Task badge ────────────────────────────────── */
+    .linkedBadge { font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(255,145,0,.1);border:1px solid rgba(255,145,0,.3);color:var(--brand);cursor:pointer;white-space:nowrap; }
+    .linkedBadge:hover { background:rgba(255,145,0,.18); }
+
+    /* ── Today's Queue expanded ─────────────────────────── */
+    .tqItem { cursor: pointer; transition: background .1s; }
+    .tqItem:hover { background: rgba(255,255,255,.03); }
+    .tqExpanded { background: rgba(255,145,0,.04) !important; border-color: rgba(255,145,0,.2) !important; }
+    .tqDetail { margin-top: 10px; border-top: 1px solid rgba(255,145,0,.15); padding-top: 10px; }
+    .tqDetailNotes { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+
+    /* ── Triage expanded ─────────────────────────────────── */
+    .triageExpanded { background: rgba(59,130,246,.08) !important; border-color: rgba(59,130,246,.3) !important; }
+
+    /* ── Cold leads ─────────────────────────────────────── */
+    .cold-pill { color: #93c5fd !important; }
+    .cold-pill.active { background: rgba(59,130,246,.15) !important; border-color: rgba(59,130,246,.4) !important; color: #93c5fd !important; }
+    .taskCard.cold { opacity: .7; }
+    .taskCard.cold .cTask { color: var(--muted); }
+    .coldBadge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.3); color: #93c5fd; white-space: nowrap; }
+    .flagBadge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.35); color: #fca5a5; white-space: nowrap; }
+
+    /* ── Smart action suggestions ───────────────────────── */
+    .suggestedBar { display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px 0 18px; }
+    .suggestBtn { font-size:12px;font-weight:700;padding:5px 11px;border-radius:6px;border:1px solid;cursor:pointer;font-family:inherit;transition:all .12s;white-space:nowrap; }
+    .suggestBtn.sb-urgent { background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.45);color:#fca5a5; }
+    .suggestBtn.sb-urgent:hover { background:rgba(239,68,68,.22); }
+    .suggestBtn.sb-high { background:rgba(255,145,0,.1);border-color:rgba(255,145,0,.4);color:var(--brand); }
+    .suggestBtn.sb-high:hover { background:rgba(255,145,0,.2); }
+    .suggestBtn.sb-med { background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.35);color:#93c5fd; }
+    .suggestBtn.sb-med:hover { background:rgba(59,130,246,.2); }
+
+    /* ── Proactive alerts ────────────────────────────────── */
+    .alertsSection { background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.15);border-radius:var(--r);padding:14px 16px;margin-bottom:20px; }
+    .alertsLabel { font-size:11px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--urgent);display:flex;align-items:center;gap:7px;margin-bottom:10px; }
+    .alertsDot { width:6px;height:6px;border-radius:999px;background:var(--urgent);display:inline-block;animation:pulse 2s infinite; }
+    .alertsList { display:flex;flex-direction:column;gap:6px; }
+    .alertItem { display:flex;align-items:center;gap:12px;background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.1);border-radius:6px;padding:9px 12px; }
+    .alertItem.a-attention { background:rgba(245,158,11,.04);border-color:rgba(245,158,11,.15); }
+    .alertMsg { flex:1;font-size:13px;color:var(--text); }
+    .alertAct { display:flex;gap:6px;flex-shrink:0; }
+
+    /* ── Email draft zone ────────────────────────────────── */
+    .draftZone { border:1px solid rgba(59,130,246,.2);border-radius:6px;padding:14px;margin-top:8px;background:rgba(59,130,246,.04); }
+    .draftLabel { font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--normal);margin-bottom:10px; }
+    .draftTab { display:flex;gap:4px;margin-bottom:10px; }
+    .draftTabBtn { font-size:12px;padding:4px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit; }
+    .draftTabBtn.active { background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.4);color:#93c5fd; }
+    .draftText { font-size:13px;white-space:pre-wrap;color:var(--text);line-height:1.5;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:5px;padding:10px 12px;min-height:80px; }
+    .draftText[contenteditable]:focus { outline:2px solid var(--brand);outline-offset:2px; }
+    .draftActions { display:flex;gap:8px;margin-top:10px;flex-wrap:wrap; }
+
+    /* ── Estimate draft modal ────────────────────────────── */
+    .estLineItem { display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 14px;font-size:13px;border-bottom:1px solid var(--border); }
+    .estLineItem:last-child { border-bottom:none; }
+    .estLineDesc { color:var(--text); }
+    .estLineQty { color:var(--muted);text-align:right;white-space:nowrap; }
+    .estLineSub { color:var(--ok);font-weight:700;text-align:right;white-space:nowrap; }
+
+    /* ── Briefing card ───────────────────────────────────── */
+    .briefingCard { background:linear-gradient(135deg,rgba(255,145,0,.06),rgba(255,145,0,.02)); border:1px solid rgba(255,145,0,.2); border-radius:var(--r); padding:14px 16px; margin-bottom:16px; }
+    .briefHead { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .briefIcon { font-size:18px; }
+    .briefTitle { font-size:14px; font-weight:700; color:var(--text); }
+    .briefStats { display:flex; gap:16px; flex-wrap:wrap; }
+    .briefStat { display:flex; flex-direction:column; }
+    .briefStatVal { font-size:18px; font-weight:800; color:var(--ok); }
+    .briefStatLbl { font-size:11px; color:var(--muted); }
+    .briefUrgentItem { font-size:12px; color:var(--text); padding:3px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+    .briefUrgentItem:last-child { border-bottom:none; }
+
+    /* ── Mobile ─────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      header, main { padding-left: 14px; padding-right: 14px; }
+      .hKpis { gap: 12px; }
+      .searchInput { width: 130px; }
+      .cTask { font-size: 15px; }
+      .mRow { grid-template-columns: 1fr; }
+      .hRight .btn:not(.primary) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="hTop">
+    <div class="brand">Merch Troop</div>
+    <div class="hKpis">
+      <div class="hKpi">
+        <div class="hKpiVal k-green" id="kPipeline">–</div>
+        <div class="hKpiLabel">pipeline</div>
+      </div>
+      <div class="hKpi">
+        <div class="hKpiVal k-red" id="kOverdue">–</div>
+        <div class="hKpiLabel">overdue</div>
+      </div>
+      <div class="hKpi">
+        <div class="hKpiVal k-yellow" id="kFollowUps">–</div>
+        <div class="hKpiLabel">follow-ups due</div>
+      </div>
+      <div class="hKpi">
+        <div class="hKpiVal" id="kEvents">–</div>
+        <div class="hKpiLabel">events this week</div>
+      </div>
+    </div>
+    <div class="hRight">
+      <select class="userSelect" id="userSelect" onchange="setUser(this.value)">
+        <option value="Cole">Cole</option>
+        <option value="Christine">Christine</option>
+        <option value="VA">VA</option>
+      </select>
+      <div class="syncWrap">
+        <button class="btn sm" onclick="syncGhl()" id="syncBtn">Sync GHL</button>
+        <span class="syncLabel" id="syncLabel"></span>
+      </div>
+      <button class="btn sm" onclick="openActionCenter()" id="acBtn">Activity</button>
+      <button class="btn primary sm" onclick="showAdd()">+ Task</button>
+      <button class="btn sm" onclick="logout()" id="logoutBtn" title="Sign out" style="padding:7px 10px;">⏻</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tabBtn active" onclick="switchTab('active',this)">Active Tasks</button>
+    <button class="tabBtn"        onclick="switchTab('history',this)">Completed</button>
+    <button class="tabBtn"        onclick="switchTab('va-inbox',this)">VA Inbox</button>
+    <button class="tabBtn"        onclick="switchTab('schedule',this)">Event Schedule</button>
+    <button class="tabBtn"        onclick="switchTab('kanban',this)">Pipeline</button>
+    <button class="tabBtn"        onclick="switchTab('calc',this)">Calculator</button>
+    <button class="tabBtn" id="tabAnalytics" onclick="switchTab('analytics',this)">Analytics</button>
+    <button class="tabBtn" id="tabAdmin" style="display:none" onclick="switchTab('admin',this)">Admin</button>
+    <button class="tabBtn" id="tabPayroll" style="display:none" onclick="switchTab('payroll',this)">Payroll</button>
+  </div>
+  <div class="filterBar" id="activeFilters">
+    <div class="pills">
+      <button class="pill active" onclick="setFilter('all',this)">All</button>
+      <button class="pill"        onclick="setFilter('urgent',this)">Urgent</button>
+      <button class="pill"        onclick="setFilter('mine',this)">Mine</button>
+      <button class="pill"        onclick="setFilter('unassigned',this)">Unassigned</button>
+      <button class="pill cold-pill" onclick="setFilter('cold',this)">❄ Cold</button>
+    </div>
+    <input class="searchInput" id="searchInput" placeholder="Search…" oninput="onSearch(this.value)">
+  </div>
+</header>
+
+<main>
+  <!-- Active tab -->
+  <div class="tabPane active" id="paneActive">
+    <!-- Briefing card -->
+    <div id="briefingCard" style="display:none" class="briefingCard">
+      <div class="briefHead">
+        <span class="briefIcon">☀</span>
+        <span class="briefTitle" id="briefDate"></span>
+        <button class="btn sm" onclick="loadBriefing()" style="margin-left:auto">Refresh</button>
+        <button class="btn sm" onclick="sendBrief()" id="sendBriefBtn" title="Send to Slack">Slack ↗</button>
+      </div>
+      <div class="briefStats" id="briefStats"></div>
+      <div id="briefUrgent" style="margin-top:8px"></div>
+    </div>
+
+    <!-- Today's Queue: all overdue + due today, sorted by priorityScore -->
+    <div id="todayQueue" style="display:none" class="todayQueue">
+      <div class="tqLabel"><span class="tqDot"></span> Today's Queue</div>
+      <div class="tqList" id="todayQueueList"></div>
+    </div>
+
+    <!-- Email Triage bridge -->
+    <div id="triageSection" style="display:none" class="triageSection">
+      <div class="triageLabel"><span class="triageDot"></span> Email Triage <span class="sCount" id="triageCnt">0</span></div>
+      <div class="triageList" id="triageList"></div>
+    </div>
+
+    <!-- Proactive alerts -->
+    <div id="alertsSection" style="display:none" class="alertsSection">
+      <div class="alertsLabel"><span class="alertsDot"></span> Needs Attention <span class="sCount" id="alertsCnt">0</span></div>
+      <div class="alertsList" id="alertsList"></div>
+    </div>
+
+    <!-- Legacy focus strip kept for fallback; hidden by default -->
+    <div id="focusStrip" style="display:none" class="focusStrip">
+      <div class="focusLabel"><span class="focusDot"></span> Do these first</div>
+      <div class="focusList" id="focusList"></div>
+    </div>
+
+    <div class="section" id="secUrgent">
+      <div class="sHead urgent"><span class="sDot"></span> Do Now <span class="sCount" id="cntUrgent">0</span></div>
+      <div class="taskList" id="listUrgent"></div>
+    </div>
+    <div class="section" id="secAttention">
+      <div class="sHead attention"><span class="sDot"></span> Coming Up <span class="sCount" id="cntAttention">0</span></div>
+      <div class="taskList" id="listAttention"></div>
+    </div>
+    <div class="section" id="secNormal">
+      <div class="sHead normal"><span class="sDot"></span> On Deck <span class="sCount" id="cntNormal">0</span></div>
+      <div class="taskList" id="listNormal"></div>
+    </div>
+    <!-- Cold leads section (shown only when cold filter active) -->
+    <div id="secCold" style="display:none">
+      <div class="sHead" style="color:var(--muted)"><span class="sDot"></span> Cold Leads <span class="sCount" id="cntCold">0</span></div>
+      <div class="taskList" id="listCold"></div>
+    </div>
+    <div class="emptyState" id="emptyActive" style="display:none">
+      <strong>All caught up.</strong>
+      Nothing needs attention right now.
+    </div>
+  </div>
+
+  <!-- VA Inbox tab -->
+  <div class="tabPane" id="paneVaInbox">
+    <div class="vaInboxWrap">
+      <div class="vaInboxHeader">
+        <h2 class="vaTitle">Rosie's Drafts</h2>
+        <span class="vaMuted" id="vaLastRefresh"></span>
+      </div>
+      <div id="vaDraftsList"></div>
+    </div>
+  </div>
+
+  <!-- Schedule tab -->
+  <div class="tabPane" id="paneSchedule">
+    <div class="schedHeader">
+      <div class="schedTitle">Upcoming Events</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="schedFilters">
+          <button class="pill active" onclick="setSchedFilter('upcoming',this)">Upcoming</button>
+          <button class="pill"        onclick="setSchedFilter('all',this)">All</button>
+        </div>
+        <button class="btn primary sm" onclick="showAddEvent()">+ Add Event</button>
+        <button class="btn sm" id="syncEventsBtn" onclick="syncCalendarEvents()">↻ Sync Calendar</button>
+      </div>
+    </div>
+    <div class="evGrid" id="evGrid"></div>
+    <div class="emptyState" id="emptySchedule" style="display:none">
+      <strong>No events scheduled.</strong>
+      Events appear here automatically when a GHL invoice is paid.
+    </div>
+  </div>
+
+  <!-- History tab -->
+  <div class="tabPane" id="paneHistory">
+    <div id="historyContent">
+      <div class="emptyState" id="emptyHistory" style="display:none">
+        <strong>No completed tasks yet.</strong>
+        Completed tasks will appear here.
+      </div>
+    </div>
+  </div>
+
+  <!-- Pipeline / Kanban tab -->
+  <div class="tabPane" id="paneKanban">
+    <div style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div style="font-size:16px;font-weight:700;">Pipeline View</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="pill active" id="kbPipeOrder" onclick="setKanbanPipe('order',this)">Orders</button>
+        <button class="pill" id="kbPipeEvent" onclick="setKanbanPipe('event',this)">Events</button>
+      </div>
+    </div>
+    <div class="kanbanWrap">
+      <div class="kanbanTrack" id="kanbanTrack"></div>
+    </div>
+  </div>
+
+  <!-- Calculator tab (inline, no modal) -->
+  <div class="tabPane" id="paneCalc">
+    <iframe src="/calculator-v3.html" style="width:100%;height:calc(100vh - 150px);border:0;background:#fff;border-radius:var(--r);display:block;"></iframe>
+  </div>
+
+  <!-- Analytics tab -->
+  <div class="tabPane" id="paneAnalytics">
+    <div style="padding:20px;max-width:700px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h2 style="font-size:18px;font-weight:700;margin:0">Pipeline Analytics</h2>
+        <button class="btn sm" onclick="loadFunnel()">Refresh</button>
+      </div>
+      <div id="funnelKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px"></div>
+      <div style="font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Revenue by Stage</div>
+      <div id="funnelChart" style="display:flex;flex-direction:column;gap:6px;margin-bottom:24px"></div>
+      <div style="font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Why Leads Go Cold</div>
+      <div id="coldReasonChart" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+  </div>
+
+  <!-- Admin tab -->
+  <div class="tabPane" id="paneAdmin">
+    <div style="padding:20px;max-width:600px">
+      <h2 style="font-size:18px;font-weight:700;margin:0 0 20px">Admin</h2>
+      <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Access Requests</div>
+      <div id="accessRequestList"><div style="color:var(--muted);font-size:13px">No pending requests.</div></div>
+      <div style="margin-top:20px;font-size:12px;color:var(--muted)">Share this link with new staff: <a href="/request-access" target="_blank" style="color:var(--brand)">/request-access</a></div>
+    </div>
+  </div>
+
+  <!-- Payroll tab -->
+  <div class="tabPane" id="panePayroll">
+    <div style="padding:20px;max-width:700px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h2 style="font-size:18px;font-weight:700;margin:0">Payroll</h2>
+        <div style="font-size:13px;color:var(--muted)">Total: <strong id="payrollTotal" style="color:var(--ok)">$0</strong></div>
+      </div>
+      <div id="payrollList"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Estimate draft modal -->
+<div id="mEstDraft" style="display:none">
+  <div class="mBack" onclick="closeModals()"></div>
+  <div class="modal" style="max-width:580px">
+    <h3>Estimate Draft</h3>
+    <p id="estDraftContact" style="font-weight:600;color:var(--text)"></p>
+    <div id="estDraftLines" style="margin:12px 0;border:1px solid var(--border);border-radius:6px;overflow:hidden"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.18);border-radius:6px;">
+      <span style="font-size:13px;color:var(--muted)">Suggested total</span>
+      <span id="estDraftTotal" style="font-size:18px;font-weight:800;color:var(--ok)"></span>
+    </div>
+    <div id="estDraftNotes" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
+    <div class="mActions">
+      <button class="btn" onclick="closeModals()">Cancel</button>
+      <button class="btn primary" onclick="approveEstDraft()">Looks good — create in GHL ↗</button>
+    </div>
+  </div>
+</div>
+
+<!-- Complete modal -->
+<div id="mComplete" style="display:none">
+  <div class="mBack" onclick="closeModals()"></div>
+  <div class="modal">
+    <h3>Mark done</h3>
+    <p id="mCompleteDesc"></p>
+    <textarea class="mTextarea" id="mCompleteNote" placeholder="Optional: tracking #, order #, or what you did…"></textarea>
+    <div class="mActions">
+      <button class="btn" onclick="closeModals()">Cancel</button>
+      <button class="btn b-done" onclick="submitComplete()">Done ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add task modal -->
+<div id="mAdd" style="display:none">
+  <div class="mBack" onclick="closeModals()"></div>
+  <div class="modal">
+    <h3>Add task</h3>
+    <div class="mLabel">Contact name *</div>
+    <input class="mInput" id="addContact" placeholder="e.g. Sarah M.">
+    <div class="mLabel">Job description</div>
+    <input class="mInput" id="addJob" placeholder="e.g. 100 black hoodies · DTF front">
+    <div class="mLabel">Task type</div>
+    <select class="mSelect" id="addStage">
+      <option value="follow_up_lead">Follow up with lead</option>
+      <option value="send_estimate">Send estimate</option>
+      <option value="follow_up_estimate">Follow up on estimate</option>
+      <option value="order_blanks">Order blanks</option>
+      <option value="confirm_art">Confirm art approval</option>
+      <option value="schedule_production">Schedule production</option>
+      <option value="confirm_event">Confirm event details + art</option>
+      <option value="order_event_supplies">Order event supplies</option>
+      <option value="event_production">Production run</option>
+      <option value="pack_event_kit">Pack event kit</option>
+      <option value="qc_pack">QC + pack out</option>
+      <option value="ship_deliver">Ship / deliver</option>
+    </select>
+    <div class="mRow">
+      <div>
+        <div class="mLabel">Job type</div>
+        <select class="mSelect" id="addJobType">
+          <option value="order">Order</option>
+          <option value="event">Live event</option>
+        </select>
+      </div>
+      <div>
+        <div class="mLabel">Amount ($)</div>
+        <input class="mInput" id="addAmount" type="number" placeholder="0">
+      </div>
+    </div>
+    <div class="mRow">
+      <div>
+        <div class="mLabel">Due / event date</div>
+        <input class="mInput" id="addDue" type="date">
+      </div>
+      <div></div>
+    </div>
+    <div class="mLabel">Notes</div>
+    <textarea class="mTextarea" id="addNotes" placeholder="Blanks style, decoration details, event info…"></textarea>
+    <div class="mActions">
+      <button class="btn" onclick="closeModals()">Cancel</button>
+      <button class="btn primary" onclick="submitAdd()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Event modal -->
+<div id="mAddEvent" style="display:none">
+  <div class="mBack" onclick="closeModals()"></div>
+  <div class="modal">
+    <h3>Add Event</h3>
+    <div class="mLabel">Customer / contact *</div>
+    <input class="mInput" id="aeContact" placeholder="e.g. Andrea Benarroch">
+    <div class="mLabel">Event name</div>
+    <input class="mInput" id="aeEventName" placeholder="e.g. Century City Live Print">
+    <div class="mGrid2">
+      <div><div class="mLabel">Date *</div><input class="mInput" id="aeDate" type="date"></div>
+      <div><div class="mLabel">Event type</div><input class="mInput" id="aeType" placeholder="e.g. Live screen print"></div>
+    </div>
+    <div class="mGrid2">
+      <div><div class="mLabel">Start time</div><input class="mInput" id="aeStart" type="time" value="10:00"></div>
+      <div><div class="mLabel">End time</div><input class="mInput" id="aeEnd" type="time" value="18:00"></div>
+    </div>
+    <div class="mLabel">Venue / location</div>
+    <input class="mInput" id="aeLocation" placeholder="e.g. Spotify HQ, Culver City">
+    <div class="mLabel">Full address (for map + calendar invite)</div>
+    <input class="mInput" id="aeAddress" placeholder="e.g. 9000 Lindblade St, Culver City, CA 90232">
+    <div class="mGrid2">
+      <div><div class="mLabel">Staff needed</div><input class="mInput" id="aeStaff" type="number" placeholder="2" min="1"></div>
+      <div><div class="mLabel">Invoice amount ($)</div><input class="mInput" id="aeAmount" type="number" placeholder="0"></div>
+    </div>
+    <div class="mLabel">Notes (blanks, decoration, details)</div>
+    <textarea class="mTextarea" id="aeNotes" placeholder="e.g. 9 live stations, totes + apparel, mix of screen and DTF"></textarea>
+    <div class="mActions">
+      <button class="btn" onclick="closeModals()">Cancel</button>
+      <button class="btn primary" onclick="submitAddEvent()">Add Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- Calculator modal -->
+<div id="mCalc" style="display:none">
+  <div class="mBack" onclick="closeModals()"></div>
+  <div class="modal calcModal">
+    <div class="calcHead">
+      <h3>Calculator</h3>
+      <button class="btn sm" onclick="closeModals()">Close</button>
+    </div>
+    <iframe class="calcFrame" src="/calculator-v3.html"></iframe>
+  </div>
+</div>
+
+<!-- Action Center panel -->
+<div id="acOverlay" style="display:none" class="acOverlay" onclick="closeActionCenter()"></div>
+<div id="acPanel" style="display:none" class="acPanel">
+  <div class="acHead">
+    <h3>Activity</h3>
+    <button class="btn sm" onclick="closeActionCenter()">Close</button>
+  </div>
+  <div class="acBody" id="acBody">
+    <div class="acEmpty">No actions run yet.</div>
+  </div>
+</div>
+
+<!-- Bulk action confirm modal -->
+<div id="mConfirm" style="display:none">
+  <div class="mBack" onclick="cancelConfirm()"></div>
+  <div class="modal">
+    <h3 id="mConfirmTitle">Confirm action</h3>
+    <p id="mConfirmDesc"></p>
+    <ul class="confirmList" id="mConfirmList"></ul>
+    <div class="mActions">
+      <button class="btn" onclick="cancelConfirm()">Cancel</button>
+      <button class="btn primary" id="mConfirmOk" onclick="proceedConfirm()">Run</button>
+    </div>
+  </div>
+</div>
+
+<div id="undoBar" style="display:none" class="undoBar">
+  <span id="undoMsg">Action queued</span>
+  <button class="undoBtn" onclick="cancelQueued()">Undo</button>
+  <span class="undoTimer" id="undoTimer">8s</span>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+let tasks        = [];
+let coldTasks    = [];
+let history      = [];
+let me           = localStorage.getItem('mtUser') || 'Cole';
+let activeFilter = 'all';
+let tqExpandedId = null;
+let triageExpandedId = null;
+let searchQ      = '';
+let expandedId   = null;
+let completingId = null;
+let activeTab    = 'active';
+let snoozeOpenId = null;
+
+const PIPELINES = {
+  order: ['follow_up_lead','send_estimate','follow_up_estimate','order_blanks','confirm_art','schedule_production','qc_pack','ship_deliver'],
+  event: ['follow_up_lead','send_estimate','follow_up_estimate','confirm_event','order_event_supplies','event_production','pack_event_kit'],
+};
+const LABELS = {
+  follow_up_lead:'Follow up', send_estimate:'Send estimate', follow_up_estimate:'Follow up estimate',
+  order_blanks:'Order blanks', confirm_art:'Confirm art', schedule_production:'Schedule production',
+  qc_pack:'QC + pack', ship_deliver:'Ship / deliver', confirm_event:'Confirm event',
+  order_event_supplies:'Order supplies', event_production:'Production run', pack_event_kit:'Pack event kit',
+};
+
+// ── renderState: unified loading/empty/error/ready helper ───────────────
+// Usage: renderState(containerEl, { status, title, body, ctaLabel, ctaAction })
+function renderState(container, { status, title, body, ctaLabel, ctaAction } = {}) {
+  if (status === 'loading') {
+    container.innerHTML = [1,2,3].map(() => `
+      <div class="skeletonCard">
+        <div class="skeletonLine" style="width:55%"></div>
+        <div class="skeletonLine" style="width:80%"></div>
+        <div class="skeletonLine" style="width:40%"></div>
+      </div>`).join('');
+    return;
+  }
+  const icon = status === 'error' ? '⚠' : status === 'empty' ? '—' : '';
+  container.innerHTML = `
+    <div class="stateBlock">
+      ${icon ? `<div class="stateIcon">${icon}</div>` : ''}
+      <div class="stateTitle">${esc(title || '')}</div>
+      <div class="stateBody">${esc(body || '')}</div>
+      ${ctaLabel && ctaAction ? `<div class="stateCta"><button class="btn primary sm" onclick="${esc(ctaAction)}">${esc(ctaLabel)}</button></div>` : ''}
+    </div>`;
+}
+
+// ── KPI bar ─────────────────────────────────────────────────────────────
+async function loadKpis() {
+  try {
+    const r = await fetch('/api/overview/kpis', { headers: authH() });
+    const d = await r.json();
+    if (!d.ok) return;
+    const fmt$ = v => v >= 1000 ? '$' + (v / 1000).toFixed(v % 1000 === 0 ? 0 : 1) + 'k' : '$' + v;
+    document.getElementById('kPipeline').textContent  = fmt$(d.pipelineRevenue  || 0);
+    document.getElementById('kOverdue').textContent   = d.overdueCount          ?? 0;
+    document.getElementById('kFollowUps').textContent = d.followUpsDueToday     ?? 0;
+    document.getElementById('kEvents').textContent    = d.eventsThisWeek        ?? 0;
+    // Colour overdue red only when > 0
+    document.getElementById('kOverdue').className = 'hKpiVal' + (d.overdueCount > 0 ? ' k-red' : '');
+    document.getElementById('kFollowUps').className = 'hKpiVal' + (d.followUpsDueToday > 0 ? ' k-yellow' : '');
+  } catch {}
+}
+
+// ── Boot ────────────────────────────────────────────────────────────────
+document.getElementById('userSelect').value = me;
+boot();
+
+async function boot() {
+  await checkAuth();
+  await Promise.all([loadTasks(), loadHistory(), loadSchedule(), loadKpis(), loadTriage(), loadAlerts()]);
+  updateSyncLabel();
+  // Load briefing for admin/va roles
+  const portalRole = localStorage.getItem('portalRole');
+  if (portalRole === 'admin' || portalRole === 'va') loadBriefing();
+  // Sync user display name from stored session
+  const storedName = localStorage.getItem('portalUser');
+  if (storedName) {
+    me = storedName;
+    const sel = document.getElementById('userSelect');
+    if (sel) sel.value = storedName;
+  }
+  setInterval(loadTasks,       30000);
+  setInterval(loadSchedule,    60000);
+  setInterval(loadKpis,        60000);
+  setInterval(loadAlerts,     120000);
+  setInterval(updateSyncLabel, 60000);
+}
+
+// ── Data ────────────────────────────────────────────────────────────────
+function authH() {
+  const token = localStorage.getItem('portalToken');
+  if (token) return { Authorization: 'Bearer ' + token };
+  return { Authorization: 'Basic ' + btoa('team:MerchTroopTeam') };
+}
+
+async function loadTasks() {
+  const firstLoad = tasks.length === 0;
+  if (firstLoad && activeTab === 'active') {
+    const listEl = document.getElementById('listUrgent');
+    if (listEl) renderState(listEl, { status: 'loading' });
+  }
+  try {
+    // Load active and cold in parallel
+    const [ra, rc] = await Promise.all([
+      fetch('/api/tasks?status=active', { headers: authH() }),
+      fetch('/api/tasks?status=cold',   { headers: authH() }),
+    ]);
+    if (!ra.ok) throw new Error('HTTP ' + ra.status);
+    const da = await ra.json();
+    tasks = da.items || [];
+    if (rc.ok) { const dc = await rc.json(); coldTasks = dc.items || []; }
+    if (activeTab === 'active') renderActive();
+    if (activeTab === 'kanban') renderKanban();
+  } catch (e) {
+    if (activeTab === 'active') {
+      const listEl = document.getElementById('listUrgent');
+      if (listEl) renderState(listEl, {
+        status: 'error',
+        title: 'Could not load tasks',
+        body: 'Check that the portal server is running.',
+        ctaLabel: 'Retry',
+        ctaAction: 'loadTasks()',
+      });
+    }
+    toast('Could not load tasks', 'err');
+  }
+}
+
+async function loadHistory() {
+  try {
+    const r = await fetch('/api/tasks/history', { headers: authH() });
+    const d = await r.json();
+    history = d.items || [];
+    if (activeTab === 'history') renderHistory();
+  } catch {}
+}
+
+async function post(path, body) {
+  try {
+    const r = await fetch(path, {
+      method: 'POST',
+      headers: { ...authH(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return await r.json();
+  } catch { toast('Request failed', 'err'); return null; }
+}
+
+// ── Render: Active ──────────────────────────────────────────────────────
+function renderActive() {
+  // Cold filter: show cold leads list, hide normal sections
+  const isColdView = activeFilter === 'cold';
+  document.getElementById('secCold').style.display    = isColdView ? '' : 'none';
+  document.getElementById('secUrgent').style.display  = isColdView ? 'none' : '';
+  document.getElementById('secAttention').style.display = isColdView ? 'none' : '';
+  document.getElementById('secNormal').style.display  = isColdView ? 'none' : '';
+  document.getElementById('todayQueue').style.display = 'none';
+  document.getElementById('focusStrip').style.display = 'none';
+  document.getElementById('alertsSection').style.display = isColdView ? 'none' : document.getElementById('alertsSection').dataset.hasAlerts === '1' ? '' : 'none';
+
+  if (isColdView) {
+    let cold = coldTasks.slice();
+    if (searchQ) {
+      const q = searchQ.toLowerCase();
+      cold = cold.filter(t =>
+        t.contactName?.toLowerCase().includes(q) ||
+        t.taskLabel?.toLowerCase().includes(q)   ||
+        t.jobName?.toLowerCase().includes(q)
+      );
+    }
+    document.getElementById('cntCold').textContent = cold.length;
+    document.getElementById('listCold').innerHTML  = cold.length
+      ? cold.map(t => renderCard(t, true)).join('')
+      : '<div style="padding:16px;color:var(--muted);font-size:13px">No cold leads.</div>';
+    document.getElementById('emptyActive').style.display = 'none';
+    return;
+  }
+
+  let list = tasks.slice();
+  if (activeFilter === 'urgent')     list = list.filter(t => t.priority === 'urgent');
+  if (activeFilter === 'mine')       list = list.filter(t => t.assignee === me);
+  if (activeFilter === 'unassigned') list = list.filter(t => !t.assignee);
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    list = list.filter(t =>
+      t.contactName?.toLowerCase().includes(q) ||
+      t.taskLabel?.toLowerCase().includes(q)   ||
+      t.jobName?.toLowerCase().includes(q)
+    );
+  }
+
+  const urgent    = list.filter(t => t.priority === 'urgent');
+  const attention = list.filter(t => t.priority === 'attention');
+  const normal    = list.filter(t => t.priority === 'normal');
+
+  // Today's Queue: all overdue or due-today tasks, sorted by priorityScore desc
+  const tq = list.filter(t =>
+    t.slaStatus === 'overdue' ||
+    (t.dueDate && daysUntil(t.dueDate) < 1)
+  ).sort((a, b) => (b.priorityScore ?? 0) - (a.priorityScore ?? 0));
+
+  const tqZone = document.getElementById('todayQueue');
+  if (tq.length && activeFilter === 'all' && !searchQ) {
+    tqZone.style.display = '';
+    document.getElementById('todayQueueList').innerHTML = tq.map(tqItem).join('');
+  } else {
+    tqZone.style.display = 'none';
+  }
+
+  setSection('secUrgent',    'listUrgent',    'cntUrgent',    urgent);
+  setSection('secAttention', 'listAttention', 'cntAttention', attention);
+  setSection('secNormal',    'listNormal',    'cntNormal',    normal);
+  document.getElementById('emptyActive').style.display = list.length ? 'none' : '';
+  if (expandedId) setTimeout(loadPendingEstimates, 120);
+}
+
+function setSection(secId, listId, cntId, items) {
+  document.getElementById(secId).style.display = items.length ? '' : 'none';
+  document.getElementById(cntId).textContent   = items.length;
+  document.getElementById(listId).innerHTML    = items.map(renderCard).join('');
+}
+
+function focusItem(t) {
+  return `<div class="focusItem" onclick="scrollToCard('${esc(t.id)}')">
+    <div style="flex:1">
+      <div class="focusTask">${esc(t.taskLabel)}</div>
+      <div class="focusMeta">${esc(t.contactName)}${t.dueDate ? ' · ' + fmtDate(t.dueDate) : ''}${t.slaText ? ' · ' + t.slaText : ''}</div>
+    </div>
+    <div class="focusAction">
+      ${!t.assignee ? `<button class="btn sm b-claim" onclick="claim('${esc(t.id)}');event.stopPropagation()">Claim</button>` : ''}
+      <button class="btn sm b-done" onclick="openComplete('${esc(t.id)}');event.stopPropagation()">Done ✓</button>
+    </div>
+  </div>`;
+}
+
+function toggleTqItem(id) {
+  tqExpandedId = tqExpandedId === id ? null : id;
+  renderActive();
+}
+
+function tqItem(t) {
+  const exp = tqExpandedId === t.id;
+  const revHtml = t.amount
+    ? `<span class="tqRev${Number(t.amount) >= 1000 ? ' tqRevBig' : ''}">$${Number(t.amount).toLocaleString()}</span>`
+    : '';
+  const metaParts = [
+    t.contactName,
+    t.slaText || null,
+    t.dueDate ? fmtDate(t.dueDate) : null,
+    t.blockedBy ? 'Waiting: ' + t.blockedBy : null,
+  ].filter(Boolean).join(' · ');
+
+  const suggestBtns = (t.suggestedActions || []).slice(0,3).map(s => `
+    <button class="suggestBtn ${s.priority === 'urgent' ? 'sb-urgent' : s.priority === 'high' ? 'sb-high' : 'sb-med'}"
+      onclick="runSuggestion('${esc(t.id)}','${esc(s.action)}','${esc(s.id)}',event)">
+      ${s.icon ? s.icon + ' ' : ''}${esc(s.label)}
+    </button>`).join('');
+
+  const steps = (t.instructions || []).map((step, i) =>
+    `<div class="howStep"><span class="howNum">${i+1}.</span><span>${esc(step)}</span></div>`
+  ).join('');
+
+  const expandedHtml = exp ? `
+    <div class="tqDetail" onclick="event.stopPropagation()">
+      ${t.notes ? `<div class="tqDetailNotes">${esc(t.notes)}</div>` : ''}
+      ${steps ? `<div class="howSteps open" style="margin-bottom:8px">${steps}</div>` : ''}
+      ${suggestBtns ? `<div class="suggestedBar" style="padding:0;margin-bottom:8px;">${suggestBtns}</div>` : ''}
+      <div id="draftZone-${esc(t.id)}" class="draftZone" style="display:none"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+        ${!t.assignee ? `<button class="btn sm b-claim" onclick="claim('${esc(t.id)}');event.stopPropagation()">Claim</button>` : `<span class="assignBadge me">${esc(t.assignee)}</span>`}
+        <button class="btn sm b-snooze" onclick="toggleSnooze('${esc(t.id)}',event)">Snooze</button>
+        <button class="btn sm b-done" onclick="openComplete('${esc(t.id)}',event)">Done ✓</button>
+        ${snoozeOpenId === t.id ? renderSnoozeMenu(t.id) : ''}
+      </div>
+    </div>` : '';
+
+  return `<div class="tqItem${exp ? ' tqExpanded' : ''}" id="tqi-${esc(t.id)}" onclick="toggleTqItem('${esc(t.id)}')">
+    <div class="tqMain">
+      <div class="tqTask">${esc(t.taskLabel)} <span style="font-size:11px;color:var(--muted);margin-left:4px">${exp ? '▲' : '▶'}</span></div>
+      <div class="tqMeta">${esc(metaParts)}</div>
+    </div>
+    ${revHtml}
+    ${!exp ? `<div class="tqActs">
+      ${!t.assignee ? `<button class="btn sm b-claim" onclick="claim('${esc(t.id)}');event.stopPropagation()">Claim</button>` : ''}
+      <button class="btn sm b-done" onclick="openComplete('${esc(t.id)}',event)">Done ✓</button>
+    </div>` : ''}
+    ${expandedHtml}
+  </div>`;
+}
+
+function renderCard(t, isColdView = false) {
+  const isMe  = t.assignee === me;
+  const exp   = expandedId === t.id;
+
+  const meta  = [
+    t.contactName,
+    t.jobName && t.jobName !== t.contactName ? t.jobName : null,
+    t.dueDate ? fmtDate(t.dueDate) : null,
+  ].filter(Boolean).join(' · ');
+
+  // Revenue badge — prominent, bold for ≥$1k
+  const revBadge = t.amount
+    ? `<span class="revBadge${Number(t.amount) >= 1000 ? ' rev-big' : ''}">$${Number(t.amount).toLocaleString()}</span>`
+    : '';
+
+  // Payment warning — post-payment stage without confirmed payment
+  const payBadge = t.paymentRequired
+    ? `<span class="payBadge">No payment</span>`
+    : '';
+
+  // Blocked-by badge — shows what we're waiting on
+  const blockedBadge = (!t.paymentRequired && t.blockedBy)
+    ? `<span class="blockedBadge">Waiting: ${esc(t.blockedBy)}</span>`
+    : '';
+
+  // First instruction hint — visible without expanding
+  const hint = (!exp && t.instructions && t.instructions[0])
+    ? `<div class="cardHint">${esc(t.instructions[0])}</div>`
+    : '';
+
+  const slaBadge = t.slaText
+    ? `<span class="slaBadge sla-${t.slaStatus}">${esc(t.slaText)}</span>`
+    : '';
+
+  const flagBadgeHtml = t.flaggedAt ? `<span class="flagBadge" title="Flagged by ${esc(t.flaggedBy || 'VA')}${t.flagNote ? ': ' + t.flagNote : ''}">🚨 Flagged</span>` : '';
+
+  return `
+<div class="taskCard ${esc(t.priority)}${t.paymentRequired ? ' pay-warn' : ''}${isColdView ? ' cold' : ''}" id="tc-${esc(t.id)}" style="position:relative">
+  <div class="cTop" onclick="toggle('${esc(t.id)}')">
+    <div class="cInfo">
+      <div class="cTask">${esc(t.taskLabel)}</div>
+      <div class="cMeta">${esc(meta)}</div>
+      ${hint}
+    </div>
+    <div class="cRight">
+      ${revBadge}
+      ${payBadge}
+      ${flagBadgeHtml}
+      ${isColdView ? `<span class="coldBadge">❄ Cold</span>` : ''}
+      <span class="waitBadge ${waitClass(t.waitingSince)}">${esc(waitLabel(t.waitingSince))}</span>
+      ${slaBadge}
+      ${blockedBadge}
+      ${t.assignee
+        ? `<span class="assignBadge${isMe ? ' me' : ''}">${esc(t.assignee)}</span>`
+        : '<span class="assignBadge" style="opacity:.4">Unassigned</span>'
+      }
+    </div>
+  </div>
+  ${!isColdView && t.suggestedActions && t.suggestedActions.length ? `
+  <div class="suggestedBar">
+    ${t.suggestedActions.slice(0,2).map(s => `
+      <button class="suggestBtn ${s.priority === 'urgent' ? 'sb-urgent' : s.priority === 'high' ? 'sb-high' : 'sb-med'}"
+        onclick="runSuggestion('${esc(t.id)}','${esc(s.action)}','${esc(s.id)}',event)">
+        ${s.icon ? s.icon + ' ' : ''}${esc(s.label)}
+      </button>
+    `).join('')}
+  </div>` : ''}
+  <div class="cActions">
+    ${isColdView
+      ? `<button class="btn sm" style="color:#4ade80;border-color:rgba(34,197,94,.4)" onclick="reactivateLead('${esc(t.id)}',event)">🔥 Reactivate</button>`
+      : t.paymentRequired
+        ? `<button class="btn sm primary" onclick="markPaid('${esc(t.id)}',event)">Mark Paid</button>`
+        : !t.assignee
+          ? `<button class="btn sm b-claim" onclick="claim('${esc(t.id)}')">Claim</button>`
+          : isMe
+            ? `<button class="btn sm b-unclaim" onclick="unclaim('${esc(t.id)}')">Unclaim</button>`
+            : ''
+    }
+    <div class="cSpacer"></div>
+    ${!isColdView ? `<button class="btn sm" style="color:#93c5fd;border-color:rgba(59,130,246,.3)" onclick="markCold('${esc(t.id)}',event)">❄ Cold</button>` : ''}
+    ${!isColdView ? `<button class="btn sm b-snooze" onclick="toggleSnooze('${esc(t.id)}',event)">Snooze</button>` : ''}
+    ${!t.paymentRequired && !isColdView ? `<button class="btn sm b-done" onclick="openComplete('${esc(t.id)}',event)">Done ✓</button>` : ''}
+    ${snoozeOpenId === t.id ? renderSnoozeMenu(t.id) : ''}
+  </div>
+  ${exp ? renderDetail(t) : ''}
+</div>`;
+}
+
+function renderDetail(t) {
+  const pipe    = PIPELINES[t.jobType] || PIPELINES.order;
+  const curIdx  = pipe.indexOf(t.stage);
+  const steps   = pipe.map((s, i) => {
+    const cls = i < curIdx ? 'pStep done' : i === curIdx ? 'pStep cur' : 'pStep todo';
+    return `<span class="${cls}">${esc(LABELS[s] || s)}</span>${i < pipe.length - 1 ? '<span class="pArrow">›</span>' : ''}`;
+  }).join('');
+
+  const howSteps = (t.instructions || []).map((step, i) =>
+    `<div class="howStep"><span class="howNum">${i+1}.</span><span>${esc(step)}</span></div>`
+  ).join('');
+
+  const links = (t.quickLinks || []).map(l =>
+    `<a class="qLink" href="${esc(l.href)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`
+  ).join('');
+
+  return `
+<div class="cDetail">
+  <div class="pipeline">${steps}</div>
+  ${t.notes ? `<div class="dNotes">${esc(t.notes)}</div>` : ''}
+  ${t.stage === 'follow_up_estimate'
+    ? `<div class="estInline" id="est-${esc(t.id)}" data-load-estimate="${esc(t.id)}" data-contact-name="${esc(t.contactName || '')}"><span style="font-size:12px;color:var(--muted)">Loading GHL estimate…</span></div>`
+    : ''}
+  ${howSteps ? `
+  <div>
+    <div class="howToggle" onclick="toggleHow(this)">
+      <span class="howArrow">▶</span> How to do this
+    </div>
+    <div class="howSteps">${howSteps}</div>
+  </div>` : ''}
+  ${links ? `<div class="quickLinks">${links}</div>` : ''}
+  <div id="draftZone-${esc(t.id)}" class="draftZone" style="display:none"></div>
+  ${(() => { const ev = events.find(e => e.contactName === t.contactName && !e.isPast); return ev ? `<div style="margin-top:4px"><span class="linkedBadge" onclick="switchToEvent('${esc(ev.id)}');event.stopPropagation()">📅 Event: ${esc(ev.eventName || ev.date)}</span></div>` : ''; })()}
+  ${editingId === t.id ? `
+  <div class="editForm" onclick="event.stopPropagation()">
+    <div class="editRow"><span class="editLabel">Notes</span><textarea class="editNotesInput" id="editNotes-${esc(t.id)}" rows="3">${esc(t.notes || '')}</textarea></div>
+    <div class="editRow"><span class="editLabel">Due date</span><input class="editInput" type="date" id="editDue-${esc(t.id)}" value="${esc(t.dueDate || '')}"></div>
+    <div class="editRow"><span class="editLabel">Amount ($)</span><input class="editInput" type="number" id="editAmt-${esc(t.id)}" value="${esc(String(t.amount || ''))}" placeholder="0"></div>
+    <div class="editActions">
+      <button class="btn sm b-done" onclick="saveEdit('${esc(t.id)}')">Save</button>
+      <button class="btn sm b-snooze" onclick="cancelEdit()">Cancel</button>
+    </div>
+  </div>` : `
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <button class="btn sm b-snooze" onclick="openEdit('${esc(t.id)}');event.stopPropagation()" style="font-size:12px;">✏ Edit</button>
+  </div>`}
+  <div class="completeRow">
+    <textarea class="noteInput" id="dn-${esc(t.id)}" placeholder="Note when marking done — tracking #, order #, etc. (optional)" rows="2"></textarea>
+    <button class="btn sm b-done" onclick="completeWithNote('${esc(t.id)}')">Done ✓</button>
+  </div>
+</div>`;
+}
+
+function renderSnoozeMenu(id) {
+  return `<div class="snoozeMenu" onclick="event.stopPropagation()">
+    <button class="snoozeOpt" onclick="snooze('${esc(id)}',1,'Tomorrow')">Tomorrow</button>
+    <button class="snoozeOpt" onclick="snooze('${esc(id)}',3,'3 days')">3 days</button>
+    <button class="snoozeOpt" onclick="snooze('${esc(id)}',7,'1 week')">1 week</button>
+  </div>`;
+}
+
+// ── Render: History ─────────────────────────────────────────────────────
+function renderHistory() {
+  if (!history.length) {
+    document.getElementById('historyContent').innerHTML =
+      '<div class="emptyState"><strong>No completed tasks yet.</strong>Completed tasks will appear here.</div>';
+    return;
+  }
+
+  // Group by completion date
+  const groups = {};
+  for (const t of history) {
+    const day = t.completedAt ? t.completedAt.slice(0, 10) : 'unknown';
+    if (!groups[day]) groups[day] = [];
+    groups[day].push(t);
+  }
+
+  const html = Object.entries(groups).map(([day, items]) => `
+    <div class="historyDay">
+      <div class="historyDate">${fmtDay(day)}</div>
+      <div class="historyList">
+        ${items.map(t => `
+          <div class="historyItem">
+            <div class="histCheck">✓</div>
+            <div class="histInfo">
+              <div class="histTask">${esc(t.taskLabel)}</div>
+              <div class="histMeta">${esc(t.contactName)}${t.jobName && t.jobName !== t.contactName ? ' · ' + t.jobName : ''}${t.assignee ? ' · ' + t.assignee : ''}</div>
+              ${t.completionNote ? `<div class="histNote">${esc(t.completionNote)}</div>` : ''}
+            </div>
+            <div class="histTime">${fmtTime(t.completedAt)}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('historyContent').innerHTML = html;
+}
+
+// ── Actions ──────────────────────────────────────────────────────────────
+function toggle(id) {
+  expandedId = expandedId === id ? null : id;
+  snoozeOpenId = null;
+  renderActive();
+  if (expandedId) {
+    setTimeout(() => document.getElementById('tc-' + id)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 40);
+  }
+}
+
+function toggleHow(el) {
+  const steps = el.nextElementSibling;
+  const arrow = el.querySelector('.howArrow');
+  steps.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function scrollToCard(id) {
+  expandedId = id;
+  renderActive();
+  setTimeout(() => document.getElementById('tc-' + id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 40);
+}
+
+async function claim(id) {
+  await post('/api/tasks/accept', { taskId: id, assignee: me });
+  toast(me + ' claimed task');
+  await loadTasks();
+}
+
+async function unclaim(id) {
+  await post('/api/tasks/unclaim', { taskId: id });
+  toast('Unclaimed');
+  await loadTasks();
+}
+
+async function markCold(id, e) {
+  if (e) e.stopPropagation();
+  const r = await post('/api/tasks/set-status', { taskId: id, status: 'cold' });
+  if (r?.ok) { toast('❄ Moved to Cold — out of your main queue', 'ok'); await loadTasks(); }
+}
+
+async function reactivateLead(id, e) {
+  if (e) e.stopPropagation();
+  const r = await post('/api/tasks/set-status', { taskId: id, status: 'active' });
+  if (r?.ok) { toast('🔥 Reactivated — back in active queue', 'ok'); await loadTasks(); }
+}
+
+function openComplete(id, e) {
+  if (e) e.stopPropagation();
+  snoozeOpenId = null;
+  completingId = id;
+  const t = tasks.find(x => x.id === id);
+  document.getElementById('mCompleteDesc').textContent = t ? t.taskLabel + ' — ' + t.contactName : '';
+  document.getElementById('mCompleteNote').value = '';
+  document.getElementById('mComplete').style.display = '';
+  setTimeout(() => document.getElementById('mCompleteNote').focus(), 50);
+}
+
+async function submitComplete() {
+  if (!completingId) return;
+  const note = document.getElementById('mCompleteNote').value.trim();
+  const r    = await post('/api/tasks/complete', { taskId: completingId, note });
+  closeModals();
+  if (r?.needsPayment) {
+    toast('Follow-up done. Mark as paid when invoice is confirmed to unlock production steps.', 'ok');
+  } else if (r?.nextTask) {
+    toast('Done! Next: ' + (LABELS[r.nextTask.stage] || r.nextTask.stage), 'ok');
+  } else {
+    toast('Task complete!', 'ok');
+  }
+  expandedId = null;
+  await Promise.all([loadTasks(), loadHistory()]);
+}
+
+async function markPaid(id, e) {
+  if (e) e.stopPropagation();
+  const t = tasks.find(x => x.id === id);
+  const ref = window.prompt(`Confirm payment for ${t?.contactName || id}.\n\nOptional: enter invoice # or reference`, '');
+  if (ref === null) return; // cancelled
+  const r = await post('/api/tasks/mark-paid', { taskId: id, invoiceRef: ref || null });
+  if (r?.ok) {
+    const next = r.nextTask ? ' → ' + (LABELS[r.nextTask.stage] || r.nextTask.stage) : '';
+    toast('Payment confirmed!' + next, 'ok');
+    await Promise.all([loadTasks(), loadKpis()]);
+  } else {
+    toast('Could not mark paid', 'err');
+  }
+}
+
+async function completeWithNote(id) {
+  const note = (document.getElementById('dn-' + id)?.value || '').trim();
+  const r    = await post('/api/tasks/complete', { taskId: id, note });
+  if (r?.nextTask) toast('Done! Next: ' + (LABELS[r.nextTask.stage] || r.nextTask.stage), 'ok');
+  else toast('Task complete!', 'ok');
+  expandedId = null;
+  await Promise.all([loadTasks(), loadHistory()]);
+}
+
+function toggleSnooze(id, e) {
+  e.stopPropagation();
+  snoozeOpenId = snoozeOpenId === id ? null : id;
+  renderActive();
+}
+
+async function snooze(id, days, label) {
+  snoozeOpenId = null;
+  await post('/api/tasks/snooze', { taskId: id, days });
+  toast('Snoozed for ' + label);
+  await loadTasks();
+}
+
+async function submitAdd() {
+  const contact = document.getElementById('addContact').value.trim();
+  if (!contact) { toast('Contact name required', 'err'); return; }
+  await post('/api/tasks/create', {
+    contactName: contact,
+    jobName:     document.getElementById('addJob').value.trim() || contact,
+    stage:       document.getElementById('addStage').value,
+    jobType:     document.getElementById('addJobType').value,
+    amount:      document.getElementById('addAmount').value || null,
+    dueDate:     document.getElementById('addDue').value || null,
+    notes:       document.getElementById('addNotes').value.trim() || null,
+  });
+  closeModals();
+  toast('Task added', 'ok');
+  await loadTasks();
+}
+
+// ── Tabs & filters ────────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  activeTab = tab;
+  document.querySelectorAll('.tabBtn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('paneActive').classList.toggle('active',    tab === 'active');
+  document.getElementById('paneHistory').classList.toggle('active',   tab === 'history');
+  document.getElementById('paneVaInbox').classList.toggle('active',   tab === 'va-inbox');
+  document.getElementById('paneSchedule').classList.toggle('active',  tab === 'schedule');
+  document.getElementById('paneKanban').classList.toggle('active',    tab === 'kanban');
+  document.getElementById('paneCalc').classList.toggle('active',      tab === 'calc');
+  document.getElementById('paneAnalytics').classList.toggle('active', tab === 'analytics');
+  document.getElementById('paneAdmin').classList.toggle('active',     tab === 'admin');
+  document.getElementById('panePayroll').classList.toggle('active',   tab === 'payroll');
+  document.getElementById('activeFilters').style.display = tab === 'active' ? '' : 'none';
+  if (tab === 'history')   renderHistory();
+  if (tab === 'schedule')  renderSchedule();
+  if (tab === 'va-inbox')  loadVaDrafts();
+  if (tab === 'kanban')    renderKanban();
+  if (tab === 'analytics') loadFunnel();
+  if (tab === 'admin')     loadAccessRequests();
+  if (tab === 'payroll')   loadPayroll();
+}
+
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderActive();
+}
+
+function onSearch(q) { searchQ = q; renderActive(); }
+
+function setUser(u) {
+  me = u;
+  localStorage.setItem('mtUser', u);
+  renderActive();
+  if (u === 'VA') {
+    const vaTabBtn = document.querySelector('.tabBtn[onclick*="va-inbox"]');
+    if (vaTabBtn) switchTab('va-inbox', vaTabBtn);
+  }
+  if (u === 'Christine') {
+    // Switch to unassigned+mine filter for Christine's workview
+    activeFilter = 'unassigned';
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    const unassignedPill = document.querySelector('.pill[onclick*="unassigned"]');
+    if (unassignedPill) unassignedPill.classList.add('active');
+    renderActive();
+  }
+}
+
+// ── Modals ────────────────────────────────────────────────────────────────
+function showCalc() { document.getElementById('mCalc').style.display = ''; }
+
+function showAdd() {
+  ['addContact','addJob','addAmount','addNotes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('addDue').value = '';
+  document.getElementById('mAdd').style.display = '';
+  setTimeout(() => document.getElementById('addContact').focus(), 50);
+}
+
+function closeModals() {
+  ['mComplete','mAdd','mCalc','mAddEvent','mConfirm','mEstDraft'].forEach(id => document.getElementById(id).style.display = 'none');
+  completingId = null;
+  confirmPending = null;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModals(); snoozeOpenId = null; renderActive(); }
+});
+
+// Close snooze menu on outside click
+document.addEventListener('click', () => {
+  if (snoozeOpenId) { snoozeOpenId = null; renderActive(); }
+});
+
+// ── Utilities ─────────────────────────────────────────────────────────────
+function waitLabel(iso) {
+  if (!iso) return 'New';
+  const ms = Date.now() - new Date(iso).getTime();
+  const h  = ms / 3600000;
+  if (h < 1)  return 'Just now';
+  if (h < 24) return Math.round(h) + 'h';
+  const d = Math.floor(ms / 86400000);
+  return d + (d === 1 ? ' day' : ' days');
+}
+
+function waitClass(iso) {
+  if (!iso) return 'w-new';
+  const d = (Date.now() - new Date(iso).getTime()) / 86400000;
+  return d >= 3 ? 'w-hot' : d >= 1 ? 'w-warm' : 'w-new';
+}
+
+function daysUntil(dateStr) {
+  return (new Date(dateStr + 'T23:59:59').getTime() - Date.now()) / 86400000;
+}
+
+function fmtDate(s) {
+  if (!s) return '';
+  return new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function fmtDay(s) {
+  if (!s || s === 'unknown') return 'Unknown';
+  const d = new Date(s + 'T12:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+  if (d >= today) return 'Today';
+  if (d >= yesterday) return 'Yesterday';
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+function fmtTime(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Schedule ──────────────────────────────────────────────────────────────
+let events       = [];
+let schedFilter  = 'upcoming';
+let claimOpenId  = null;
+let claimSuccess = {};
+
+async function loadSchedule() {
+  try {
+    const r = await fetch('/api/schedule', { headers: authH() });
+    const d = await r.json();
+    events = d.items || [];
+    if (activeTab === 'schedule') renderSchedule();
+  } catch {}
+}
+
+async function syncCalendarEvents() {
+  const btn = document.getElementById('syncEventsBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '↻ Syncing…'; }
+  try {
+    const r = await fetch('/api/sync/events', { method: 'POST', headers: authH() });
+    const d = await r.json();
+    if (d.ok) {
+      toast(`Synced — ${d.added} new event${d.added !== 1 ? 's' : ''} added (${d.total} total)`, 'ok');
+      await loadSchedule();
+    } else {
+      toast('Sync failed: ' + (d.error || 'unknown'), 'error');
+    }
+  } catch (e) {
+    toast('Sync error: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Sync Calendar'; }
+  }
+}
+
+function renderSchedule() {
+  let list = events.slice();
+  if (schedFilter === 'upcoming') list = list.filter(e => !e.isPast);
+  document.getElementById('emptySchedule').style.display = list.length ? 'none' : '';
+  document.getElementById('evGrid').innerHTML = list.map(renderEvCard).join('');
+}
+
+function renderEvCard(e) {
+  const dateObj   = new Date(e.date + 'T12:00:00');
+  const month     = dateObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+  const day       = dateObj.getDate();
+  const dow       = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+  const spotsLeft = e.spotsLeft ?? Math.max(0, e.staffNeeded - (e.claims||[]).length);
+  const filled    = e.spotsFilled ?? (e.claims||[]).length;
+  const isFull    = e.isFull || filled >= e.staffNeeded;
+
+  const spotsClass = isFull ? 'full' : spotsLeft <= 2 ? 'low' : 'open';
+  const spotsText  = isFull ? 'Full' : spotsLeft + ' spot' + (spotsLeft === 1 ? '' : 's') + ' open';
+
+  // Staff dot row
+  const dots = [];
+  for (const c of (e.claims || [])) {
+    const initials = c.name.split(/\s+/).map(w => w[0]).join('').slice(0,2).toUpperCase();
+    const rsvp = c.rsvpStatus || 'pending';
+    const rsvpLabel = rsvp === 'accepted' ? 'Confirmed' : rsvp === 'declined' ? 'Declined' : rsvp === 'tentative' ? 'Tentative' : 'Pending';
+    const rsvpCls = rsvp === 'accepted' ? ' accepted' : rsvp === 'declined' ? ' declined' : rsvp === 'tentative' ? ' tentative' : '';
+    dots.push(`<div class="sDot filled${rsvpCls}" title="${esc(c.name)} · ${esc(c.email)} · ${rsvpLabel}">${esc(initials)}</div>`);
+  }
+  for (let i = filled; i < e.staffNeeded; i++) {
+    dots.push(`<div class="sDot empty" title="Open spot">+</div>`);
+  }
+
+  const fmt12 = t => {
+    if (!t) return '';
+    const [h, m] = t.split(':').map(Number);
+    return (h % 12 || 12) + (m ? ':' + String(m).padStart(2,'0') : '') + (h < 12 ? ' AM' : ' PM');
+  };
+  const hrs = (() => {
+    if (!e.startTime || !e.endTime) return '';
+    const [sh, sm] = e.startTime.split(':').map(Number);
+    const [eh, em] = e.endTime.split(':').map(Number);
+    const diff = (eh * 60 + em) - (sh * 60 + sm);
+    return diff > 0 ? ` · ${diff / 60} hrs` : '';
+  })();
+
+  const isOpen  = claimOpenId === e.id;
+  const wasGood = claimSuccess[e.id];
+
+  return `
+<div class="evCard${isFull ? ' full' : ''}${e.isPast ? ' past' : ''}" id="evc-${esc(e.id)}">
+  <div class="evTop">
+    <div class="evDateBadge">
+      <div class="evDateMonth">${esc(month)}</div>
+      <div class="evDateDay">${day}</div>
+      <div class="evDateDow">${esc(dow)}</div>
+    </div>
+    <div class="evMain">
+      <div class="evName">${esc(e.eventName)}</div>
+      <div class="evClient">${esc(e.contactName)}${e.amount ? ' · $' + Number(e.amount).toLocaleString() : ''}${e.source==='ghl_invoice'?'<span class="evBadge paid">PAID</span>':'<span class="evBadge unpaid">UNPAID</span>'}</div>
+      <div class="evMeta">
+        ${e.address || e.location ? `<div class="evRow"><span class="evIcon">📍</span><span class="evRowText">${esc(e.address || e.location)}</span></div>` : ''}
+        ${e.startTime ? `<div class="evRow"><span class="evIcon">🕐</span><span class="evRowText">${esc(fmt12(e.startTime))} – ${esc(fmt12(e.endTime))}${hrs}</span></div>` : ''}
+        ${e.eventType ? `<div class="evRow"><span class="evIcon">🎨</span><span class="evRowText">${esc(e.eventType)}</span></div>` : ''}
+      </div>
+    </div>
+  </div>
+
+  <div class="evStaffRow">
+    <div class="staffDots">${dots.join('')}</div>
+    <div class="staffLabel">
+      <strong>${filled}</strong> of <strong>${e.staffNeeded}</strong> claimed
+      ${(() => {
+        const confirmed = (e.claims || []).filter(c => c.rsvpStatus === 'accepted').length;
+        return confirmed > 0 ? ` · <span style="color:var(--ok);font-weight:700">${confirmed} confirmed</span>` : '';
+      })()}
+    </div>
+    <span class="spotsChip ${spotsClass}">${esc(spotsText)}</span>
+  </div>
+
+  ${(() => { const linked = tasks.filter(t => t.contactName === e.contactName); return linked.length ? `<div style="padding:0 16px 10px;display:flex;gap:6px;flex-wrap:wrap;">${linked.map(t => `<span class="linkedBadge" onclick="jumpToTask('${esc(t.id)}')">${esc(t.taskLabel || t.stage)}</span>`).join('')}</div>` : ''; })()}
+  <div class="evActions">
+    <div class="evNotes">${esc(e.notes || '')}</div>
+    ${(e.claims || []).some(c => c.googleCalEventId)
+      ? `<button class="btn sm" onclick="syncRsvps('${esc(e.id)}')">Sync RSVPs</button>`
+      : ''
+    }
+    ${!isFull && !e.isPast
+      ? `<button class="btn${isOpen ? '' : ' primary'} sm" onclick="toggleClaim('${esc(e.id)}')">${isOpen ? 'Cancel' : 'Claim a Spot'}</button>`
+      : isFull ? '<span style="font-size:13px;color:var(--muted)">All spots filled</span>' : ''
+    }
+  </div>
+
+  ${isOpen && !wasGood ? renderClaimForm(e.id) : ''}
+  ${wasGood ? `<div class="claimSuccess">✓ Spot claimed! Check your inbox for the Google Calendar invite.</div>` : ''}
+</div>`;
+}
+
+function renderClaimForm(id) {
+  return `
+<div class="claimForm">
+  <div class="claimTitle">Claim a spot</div>
+  <div class="claimSub">Enter your details — you'll get a Google Calendar invite with event info.</div>
+  <div class="claimInputs">
+    <input class="mInput" id="cn-${esc(id)}" placeholder="Your name *" autocomplete="name">
+    <input class="mInput" id="ce-${esc(id)}" placeholder="Your email *" type="email" autocomplete="email">
+  </div>
+  <div class="claimActions">
+    <button class="btn" onclick="toggleClaim('${esc(id)}')">Cancel</button>
+    <button class="btn b-done" onclick="submitClaim('${esc(id)}')">Confirm — I'll be there ✓</button>
+  </div>
+  <div class="claimNote">Your name + email will be shared with the Merch Troop team.</div>
+</div>`;
+}
+
+function toggleClaim(id) {
+  claimOpenId = claimOpenId === id ? null : id;
+  renderSchedule();
+  if (claimOpenId) {
+    setTimeout(() => {
+      document.getElementById('cn-' + id)?.focus();
+      document.getElementById('evc-' + id)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 40);
+  }
+}
+
+async function submitClaim(id) {
+  const name  = document.getElementById('cn-' + id)?.value.trim();
+  const email = document.getElementById('ce-' + id)?.value.trim();
+  if (!name)  { toast('Please enter your name', 'err'); return; }
+  if (!email || !email.includes('@')) { toast('Please enter a valid email', 'err'); return; }
+
+  const r = await post('/api/schedule/claim', { eventId: id, name, email });
+  if (!r?.ok) {
+    toast(r?.error || 'Could not claim spot', 'err');
+    return;
+  }
+
+  claimSuccess[id] = true;
+  claimOpenId = null;
+  toast(name + ' is confirmed! ' + (r.inviteSent ? 'Calendar invite sent.' : 'Invite will be sent shortly.'), 'ok');
+  await loadSchedule();
+}
+
+async function syncRsvps(eventId) {
+  toast('Syncing RSVPs from Google Calendar…');
+  try {
+    const r = await fetch('/api/schedule/sync-rsvp', {
+      method: 'POST',
+      headers: { ...authH(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      toast(`RSVPs updated — ${d.updated} change${d.updated === 1 ? '' : 's'}`, 'ok');
+    } else {
+      toast('RSVP sync failed', 'err');
+    }
+    await loadSchedule();
+  } catch { toast('RSVP sync error', 'err'); }
+}
+
+function setSchedFilter(f, el) {
+  schedFilter = f;
+  document.querySelectorAll('#paneSchedule .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderSchedule();
+}
+
+function showAddEvent() {
+  ['aeContact','aeEventName','aeLocation','aeAddress','aeType','aeNotes','aeAmount'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('aeStaff').value = '2';
+  document.getElementById('aeStart').value = '10:00';
+  document.getElementById('aeEnd').value   = '18:00';
+  document.getElementById('aeDate').value  = '';
+  document.getElementById('mAddEvent').style.display = '';
+  setTimeout(() => document.getElementById('aeContact').focus(), 50);
+}
+
+async function submitAddEvent() {
+  const contact = document.getElementById('aeContact').value.trim();
+  const date    = document.getElementById('aeDate').value;
+  if (!contact) { toast('Contact name required', 'err'); return; }
+  if (!date)    { toast('Date required', 'err'); return; }
+  const r = await post('/api/schedule/add', {
+    contactName: contact,
+    eventName:   document.getElementById('aeEventName').value.trim() || contact,
+    date,
+    startTime:   document.getElementById('aeStart').value,
+    endTime:     document.getElementById('aeEnd').value,
+    location:    document.getElementById('aeLocation').value.trim(),
+    address:     document.getElementById('aeAddress').value.trim(),
+    eventType:   document.getElementById('aeType').value.trim(),
+    staffNeeded: parseInt(document.getElementById('aeStaff').value) || 2,
+    amount:      document.getElementById('aeAmount').value || null,
+    notes:       document.getElementById('aeNotes').value.trim() || null,
+  });
+  if (!r?.ok) { toast('Failed to add event', 'err'); return; }
+  closeModals();
+  toast('Event added', 'ok');
+  await loadSchedule();
+}
+
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── Action Center ─────────────────────────────────────────────────────────
+let acResults = [];
+
+async function openActionCenter() {
+  document.getElementById('acOverlay').style.display = '';
+  document.getElementById('acPanel').style.display   = '';
+  await refreshActionCenter();
+}
+
+function closeActionCenter() {
+  document.getElementById('acOverlay').style.display = 'none';
+  document.getElementById('acPanel').style.display   = 'none';
+}
+
+async function refreshActionCenter() {
+  try {
+    const r = await fetch('/api/actions/results?limit=40', { headers: authH() });
+    const d = await r.json();
+    acResults = d.items || [];
+    renderActionCenter();
+  } catch {}
+}
+
+function renderActionCenter() {
+  const body = document.getElementById('acBody');
+  if (!acResults.length) {
+    body.innerHTML = '<div class="acEmpty">No actions run yet.</div>';
+    return;
+  }
+  body.innerHTML = acResults.map(r => {
+    const ok    = r.status === 'success';
+    const time  = r.endedAt ? new Date(r.endedAt).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : '';
+    const dur   = r.durationMs != null ? (r.durationMs < 1000 ? r.durationMs + 'ms' : (r.durationMs/1000).toFixed(1) + 's') : '';
+    const name  = r.target?.contactName || r.target?.name || r.key || '';
+    return `<div class="acItem ${ok ? 'ac-success' : 'ac-failed'}">
+      <div class="acItemTop">
+        <span class="acBadge ${ok ? 'ok' : 'err'}">${ok ? 'OK' : 'Failed'}</span>
+        <div class="acItemTitle">${esc(r.actionType || '')}${name ? ' — ' + esc(name) : ''}</div>
+      </div>
+      <div class="acItemMeta">${time}${dur ? ' · ' + dur : ''}${r.fallbackUsed ? ' · fallback' : ''}</div>
+      ${r.output ? `<div class="acItemOutput">${esc(r.output)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── Bulk action confirm + undo ────────────────────────────────────────────
+let confirmPending = null;
+let undoHandle     = null;
+let undoCallback   = null;
+
+function showConfirm(title, desc, items, onProceed) {
+  confirmPending = onProceed;
+  document.getElementById('mConfirmTitle').textContent = title;
+  document.getElementById('mConfirmDesc').textContent  = desc;
+  document.getElementById('mConfirmList').innerHTML    = items.map(i => `<li>${esc(i)}</li>`).join('');
+  document.getElementById('mConfirm').style.display    = '';
+}
+
+function cancelConfirm() {
+  confirmPending = null;
+  document.getElementById('mConfirm').style.display = 'none';
+}
+
+function proceedConfirm() {
+  const fn = confirmPending;
+  cancelConfirm();
+  if (fn) fn();
+}
+
+function showUndo(msg, onUndo) {
+  clearUndoBar();
+  undoCallback = onUndo;
+  document.getElementById('undoMsg').textContent   = msg;
+  document.getElementById('undoBar').style.display = '';
+  let secs = 8;
+  document.getElementById('undoTimer').textContent = secs + 's';
+  undoHandle = setInterval(() => {
+    secs--;
+    document.getElementById('undoTimer').textContent = secs + 's';
+    if (secs <= 0) { clearUndoBar(); undoCallback = null; }
+  }, 1000);
+}
+
+function cancelQueued() {
+  if (undoCallback) { undoCallback(); undoCallback = null; }
+  clearUndoBar();
+}
+
+function clearUndoBar() {
+  if (undoHandle) { clearInterval(undoHandle); undoHandle = null; }
+  document.getElementById('undoBar').style.display = 'none';
+}
+
+// ── VA Inbox ──────────────────────────────────────────────────────────────
+
+let vaDrafts = [];
+
+async function loadVaDrafts() {
+  try {
+    const r = await fetch('/api/va/drafts', { headers: authH() });
+    const d = await r.json();
+    vaDrafts = d.drafts || [];
+    renderVaDrafts();
+    document.getElementById('vaLastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch(e) { console.error('VA drafts load failed', e); }
+}
+
+function renderVaDrafts() {
+  const el = document.getElementById('vaDraftsList');
+  if (!el) return;
+  if (!vaDrafts.length) {
+    el.innerHTML = '<div class="vaEmpty">No drafts waiting — Rosie is all caught up.</div>';
+    return;
+  }
+  el.innerHTML = vaDrafts.map(d => {
+    const badgeClass = d.urgent ? 'urgent' : d.type;
+    const badgeLabel = d.urgent ? '⚠ URGENT' : d.type === 'estimate' ? 'Estimate' : 'Reply Draft';
+    const cardClass = d.urgent ? 'urgent' : d.type;
+    const flagsHtml = d.flags.length
+      ? '<div class="vaCardFlags">' + d.flags.map(f => `<div class="vaCardFlag">⚠ ${f}</div>`).join('') + '</div>'
+      : '';
+    const metaParts = [];
+    if (d.estimateType) metaParts.push(d.estimateType);
+    if (d.date) metaParts.push(d.date);
+    if (d.contact) metaParts.push(d.contact);
+    const metaHtml = metaParts.length ? `<div class="vaCardMeta">${metaParts.map(p => `<span>${p}</span>`).join('')}</div>` : '';
+    const totalHtml = d.total ? `<div class="vaCardTotal">$${d.total.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>` : '';
+    return `
+      <div class="vaDraftCard ${cardClass}" data-filename="${d.filename}">
+        <div class="vaCardTop">
+          <span class="vaCardBadge ${badgeClass}">${badgeLabel}</span>
+          <span class="vaCardClient">${d.clientName}</span>
+          ${totalHtml}
+        </div>
+        ${metaHtml}
+        ${flagsHtml}
+        <div class="vaCardActions">
+          <button class="vaBtnSent" onclick="markDraftSent('${d.filename}')">✓ Mark Sent</button>
+          <button class="vaBtnDismiss" onclick="markDraftSent('${d.filename}')">Dismiss</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function markDraftSent(filename) {
+  const card = document.querySelector(`[data-filename="${filename}"]`);
+  if (card) { card.style.opacity = '0.4'; card.style.pointerEvents = 'none'; }
+  try {
+    await fetch('/api/va/drafts/complete', {
+      method: 'POST',
+      headers: { ...authH(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename }),
+    });
+    await loadVaDrafts();
+  } catch(e) {
+    console.error('Failed to mark draft sent', e);
+    if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
+  }
+}
+
+// Auto-refresh VA inbox every 60s when tab is active
+setInterval(() => {
+  if (document.getElementById('paneVaInbox')?.classList.contains('active')) {
+    loadVaDrafts();
+  }
+}, 60000);
+
+// ── GHL Sync button ────────────────────────────────────────────────────────
+async function syncGhl() {
+  const btn = document.getElementById('syncBtn');
+  const lbl = document.getElementById('syncLabel');
+  if (btn) { btn.disabled = true; btn.textContent = 'Syncing…'; }
+  if (lbl) { lbl.textContent = ''; lbl.className = 'syncLabel syncing'; }
+  try {
+    const r = await fetch('/api/sync/ghl', { method: 'POST', headers: authH() });
+    const d = await r.json();
+    if (d.ok) {
+      const msg = `+${d.created||0} tasks, ${d.completed||0} completed`;
+      toast('GHL sync done — ' + msg, 'ok');
+      localStorage.setItem('lastGhlSync', new Date().toISOString());
+      updateSyncLabel();
+      await Promise.all([loadTasks(), loadKpis()]);
+    } else {
+      toast('GHL sync failed: ' + (d.error || 'not configured'), 'err');
+    }
+  } catch { toast('GHL sync error', 'err'); }
+  if (btn) { btn.disabled = false; btn.textContent = 'Sync GHL'; }
+  if (lbl) lbl.className = 'syncLabel';
+}
+
+function updateSyncLabel() {
+  const lbl = document.getElementById('syncLabel');
+  if (!lbl) return;
+  const ts = localStorage.getItem('lastGhlSync');
+  if (!ts) { lbl.textContent = ''; return; }
+  const mins = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
+  if (mins < 1) lbl.textContent = 'just now';
+  else if (mins < 60) lbl.textContent = mins + 'm ago';
+  else lbl.textContent = Math.floor(mins / 60) + 'h ago';
+}
+
+// ── Email Triage ──────────────────────────────────────────────────────────
+let triageThreads = [];
+
+async function loadTriage() {
+  try {
+    const r = await fetch('/api/email/triage', { headers: authH() });
+    const d = await r.json();
+    triageThreads = d.threads || [];
+    renderTriage();
+  } catch {}
+}
+
+function toggleTriageItem(threadId) {
+  triageExpandedId = triageExpandedId === threadId ? null : threadId;
+  renderTriage();
+}
+
+function renderTriage() {
+  const sec = document.getElementById('triageSection');
+  if (!sec) return;
+  if (!triageThreads.length) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  document.getElementById('triageCnt').textContent = triageThreads.length;
+  document.getElementById('triageList').innerHTML = triageThreads.map(t => {
+    const exp = triageExpandedId === t.threadId;
+    const stageLabel = {
+      follow_up_lead: 'Follow up with lead',
+      send_estimate: 'Send estimate',
+      follow_up_estimate: 'Follow up on estimate',
+      confirm_art: 'Confirm art approval',
+    }[t.suggestedStage] || t.suggestedStage;
+
+    return `
+    <div class="triageItem${exp ? ' triageExpanded' : ''}" onclick="toggleTriageItem('${esc(t.threadId)}')" style="cursor:pointer;flex-direction:column;align-items:stretch;">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <div class="triageMain" style="flex:1">
+          <div class="triageSubject">${esc(t.subject)} <span style="font-size:11px;color:var(--muted);margin-left:4px">${exp ? '▲' : '▶'}</span></div>
+          <div class="triageMeta">${esc(t.contactName || '')}${t.from ? ' · ' + esc(t.from) : ''}${t.receivedAt ? ' · ' + fmtTime(t.receivedAt) : ''}</div>
+        </div>
+        ${!exp ? `<div class="triageActs" onclick="event.stopPropagation()">
+          <button class="btn sm b-claim" onclick="createTaskFromThread('${esc(t.threadId)}')">+ Task</button>
+          <button class="btn sm b-snooze" onclick="dismissThread('${esc(t.threadId)}')">Done</button>
+        </div>` : ''}
+      </div>
+      ${exp ? `
+      <div style="margin-top:10px;border-top:1px solid rgba(59,130,246,.2);padding-top:10px;" onclick="event.stopPropagation()">
+        ${t.summary ? `<div style="font-size:13px;color:var(--text);line-height:1.5;margin-bottom:8px;">${esc(t.summary)}</div>` : ''}
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Suggested next step: <strong style="color:var(--normal)">${esc(stageLabel)}</strong></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn sm b-claim" onclick="createTaskFromThread('${esc(t.threadId)}')">+ Create Task (${esc(stageLabel)})</button>
+          <button class="btn sm b-snooze" onclick="dismissThread('${esc(t.threadId)}')">Mark Done</button>
+        </div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function createTaskFromThread(threadId) {
+  const t = triageThreads.find(x => x.threadId === threadId);
+  if (!t) return;
+  const r = await post('/api/tasks/from-email', {
+    contactName: t.contactName || 'Unknown',
+    emailSubject: t.subject,
+    emailSummary: t.summary || null,
+    stage: t.suggestedStage,
+    jobType: 'order',
+    threadId: t.threadId,
+  });
+  if (r?.ok && !r?.skipped) {
+    toast('Task created for ' + (t.contactName || 'thread'), 'ok');
+    triageThreads = triageThreads.filter(x => x.threadId !== threadId);
+  } else if (r?.skipped) {
+    toast('Task already exists for this thread');
+    triageThreads = triageThreads.filter(x => x.threadId !== threadId);
+  } else {
+    toast('Failed to create task', 'err');
+  }
+  renderTriage();
+  if (r?.ok) await loadTasks();
+}
+
+async function dismissThread(threadId) {
+  await post('/api/email/done', { threadId, note: 'Dismissed from portal triage' });
+  triageThreads = triageThreads.filter(x => x.threadId !== threadId);
+  renderTriage();
+  toast('Thread dismissed');
+}
+
+// ── Pipeline / Kanban ─────────────────────────────────────────────────────
+let kanbanPipe = 'order';
+
+function setKanbanPipe(pipe, el) {
+  kanbanPipe = pipe;
+  document.querySelectorAll('#paneKanban .pill').forEach(p => p.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderKanban();
+}
+
+function renderKanban() {
+  const track = document.getElementById('kanbanTrack');
+  if (!track) return;
+  const stages = kanbanPipe === 'event'
+    ? ['follow_up_lead','send_estimate','follow_up_estimate','confirm_event','order_event_supplies','event_production','pack_event_kit']
+    : ['follow_up_lead','send_estimate','follow_up_estimate','order_blanks','confirm_art','schedule_production','qc_pack','ship_deliver'];
+  const relevant = kanbanPipe === 'event'
+    ? tasks.filter(t => t.jobType === 'event')
+    : tasks.filter(t => t.jobType === 'order' || !t.jobType);
+  const stageColor = { follow_up_lead:'normal',send_estimate:'normal',follow_up_estimate:'attention',order_blanks:'urgent',confirm_art:'attention',schedule_production:'normal',qc_pack:'normal',ship_deliver:'normal',confirm_event:'urgent',order_event_supplies:'attention',event_production:'attention',pack_event_kit:'urgent' };
+
+  track.innerHTML = stages.map(stage => {
+    const label = LABELS[stage] || stage;
+    const stageTasks = relevant.filter(t => t.stage === stage);
+    const color = stageColor[stage] || 'normal';
+    const cards = stageTasks.map(t => `
+      <div class="kanbanCard ${esc(t.priority)}${t.paymentRequired ? ' pay-warn' : ''}" onclick="jumpToTask('${esc(t.id)}')">
+        <div class="kcName">${esc(t.contactName)}</div>
+        <div class="kcJob">${esc(t.jobName && t.jobName !== t.contactName ? t.jobName : '')}</div>
+        <div class="kcFoot">
+          ${t.amount ? `<span class="kcRev">$${Number(t.amount).toLocaleString()}</span>` : '<span></span>'}
+          <span class="kcDue">${t.dueDate ? fmtDate(t.dueDate) : (t.slaText || '')}</span>
+        </div>
+      </div>
+    `).join('');
+    return `<div class="kanbanCol">
+      <div class="kanbanHead">
+        <span class="sDot ${color}"></span>${esc(label)}<span class="kanbanCnt">${stageTasks.length}</span>
+      </div>
+      <div class="kanbanCards">${cards || '<div class="kanbanEmpty">—</div>'}</div>
+    </div>`;
+  }).join('');
+}
+
+function jumpToTask(id) {
+  if (activeTab !== 'active') {
+    const btn = document.querySelector('.tabBtn[onclick*="\'active\'"]');
+    if (btn) switchTab('active', btn);
+    setTimeout(() => scrollToCard(id), 120);
+  } else {
+    scrollToCard(id);
+  }
+}
+
+function switchToEvent(evId) {
+  const btn = document.querySelector('.tabBtn[onclick*="\'schedule\'"]');
+  if (btn) switchTab('schedule', btn);
+  setTimeout(() => document.getElementById('evc-' + evId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+}
+
+// ── Inline task edit ──────────────────────────────────────────────────────
+let editingId = null;
+
+function openEdit(id) {
+  editingId = id;
+  renderActive();
+  setTimeout(() => document.getElementById('editNotes-' + id)?.focus(), 60);
+}
+
+function cancelEdit() {
+  editingId = null;
+  renderActive();
+}
+
+async function saveEdit(id) {
+  const notes   = document.getElementById('editNotes-' + id)?.value ?? '';
+  const dueDate = document.getElementById('editDue-'   + id)?.value || null;
+  const amtVal  = document.getElementById('editAmt-'   + id)?.value;
+  const amount  = amtVal ? Number(amtVal) : null;
+  const r = await post('/api/tasks/edit', { taskId: id, notes, dueDate, amount });
+  if (r?.ok) {
+    toast('Task updated', 'ok');
+    editingId = null;
+    await loadTasks();
+  } else {
+    toast('Save failed', 'err');
+  }
+}
+
+// ── GHL Estimate inline load ──────────────────────────────────────────────
+const estimateCache = {};
+
+async function loadPendingEstimates() {
+  const pending = document.querySelectorAll('[data-load-estimate]');
+  if (!pending.length) return;
+  let fetched = null;
+  for (const el of pending) {
+    const taskId = el.dataset.loadEstimate;
+    const contactName = (el.dataset.contactName || '').toLowerCase();
+    if (estimateCache[taskId] !== undefined) {
+      if (estimateCache[taskId]) renderEstimateInline(el, estimateCache[taskId]);
+      else el.style.display = 'none';
+      continue;
+    }
+    estimateCache[taskId] = null;
+    try {
+      if (!fetched) {
+        const r = await fetch('/api/ghl/estimates?limit=25', { headers: authH() });
+        const d = await r.json();
+        fetched = d.ok ? (d.items || []) : [];
+      }
+      const match = fetched.find(e => {
+        const cn = (e.contactName || '').toLowerCase();
+        const first = contactName.split(' ')[0];
+        return cn.includes(first) || (first && contactName.includes(cn.split(' ')[0]));
+      });
+      if (match) { estimateCache[taskId] = match; renderEstimateInline(el, match); }
+      else el.style.display = 'none';
+    } catch { el.style.display = 'none'; }
+  }
+}
+
+function renderEstimateInline(el, est) {
+  if (!est) { el.style.display = 'none'; return; }
+  el.className = 'estInline';
+  el.innerHTML = `
+    <div class="estLabel">GHL Estimate</div>
+    ${est.name ? `<div class="estRow"><span class="estKey">Name</span><span class="estVal">${esc(est.name)}</span></div>` : ''}
+    ${est.total != null ? `<div class="estRow"><span class="estKey">Total</span><span class="estVal" style="color:var(--ok);font-weight:700">$${Number(est.total).toLocaleString()}</span></div>` : ''}
+    ${est.status ? `<div class="estRow"><span class="estKey">Status</span><span class="estVal">${esc(est.status)}</span></div>` : ''}
+    ${est.createdAt ? `<div class="estRow"><span class="estKey">Sent</span><span class="estVal">${new Date(est.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span></div>` : ''}
+    ${est.lineSummary ? `<div class="estRow"><span class="estKey">Items</span><span class="estVal">${esc(est.lineSummary)}</span></div>` : ''}
+  `;
+  el.style.display = '';
+}
+
+// ── Auth / session ────────────────────────────────────────────────────────
+async function checkAuth() {
+  const token = localStorage.getItem('portalToken');
+  if (!token) { window.location.href = '/login'; return; }
+  try {
+    const r = await fetch('/api/auth/me', { headers: authH() });
+    if (!r.ok) { localStorage.removeItem('portalToken'); window.location.href = '/login'; return; }
+    const d = await r.json();
+    if (d.ok) {
+      localStorage.setItem('portalRole', d.role || '');
+      localStorage.setItem('portalUser', d.name || '');
+      applyRoleRestrictions(d.role || '');
+    }
+  } catch {}
+}
+
+function applyRoleRestrictions(role) {
+  const isOnsite = role === 'onsite';
+  const isAdmin = role === 'admin';
+
+  // Hide tabs for onsite
+  document.querySelectorAll('.tabBtn').forEach(btn => {
+    const tabName = btn.getAttribute('onclick')?.match(/'(\w+[-\w]*)'/)?.[1];
+    if (isOnsite && tabName && tabName !== 'schedule') {
+      btn.style.display = 'none';
+    }
+  });
+
+  // Show admin-only tabs
+  if (isAdmin) {
+    const adminTab = document.getElementById('tabAdmin');
+    if (adminTab) adminTab.style.display = '';
+  }
+  // Show payroll for full-access roles: admin + va (Cole and Christine)
+  if (isAdmin || role === 'va') {
+    const payrollTab = document.getElementById('tabPayroll');
+    if (payrollTab) payrollTab.style.display = '';
+  }
+
+  // Hide filter bar and header controls for onsite
+  if (isOnsite) {
+    document.getElementById('activeFilters')?.style && (document.getElementById('activeFilters').style.display = 'none');
+    document.getElementById('syncBtn')?.closest('.syncWrap')?.style && (document.getElementById('syncBtn').closest('.syncWrap').style.display = 'none');
+    document.getElementById('acBtn')?.style && (document.getElementById('acBtn').style.display = 'none');
+    // Switch to schedule tab for onsite
+    const schedBtn = document.querySelector('.tabBtn[onclick*="\'schedule\'"]');
+    if (schedBtn) switchTab('schedule', schedBtn);
+  }
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST', headers: authH() });
+  localStorage.removeItem('portalToken');
+  localStorage.removeItem('portalUser');
+  localStorage.removeItem('portalRole');
+  window.location.href = '/login';
+}
+
+// ── Proactive Alerts ──────────────────────────────────────────────────────
+let portalAlerts = [];
+
+async function loadAlerts() {
+  try {
+    const r = await fetch('/api/overview/alerts', { headers: authH() });
+    const d = await r.json();
+    portalAlerts = d.alerts || [];
+    renderAlerts();
+  } catch {}
+}
+
+function renderAlerts() {
+  const sec = document.getElementById('alertsSection');
+  if (!sec) return;
+  if (!portalAlerts.length) { sec.style.display = 'none'; sec.dataset.hasAlerts = '0'; return; }
+  sec.dataset.hasAlerts = '1';
+  if (activeFilter === 'cold') return; // don't show alerts in cold view
+  sec.style.display = '';
+  document.getElementById('alertsCnt').textContent = portalAlerts.length;
+  document.getElementById('alertsList').innerHTML = portalAlerts.map(a => `
+    <div class="alertItem ${a.level === 'attention' ? 'a-attention' : ''}">
+      <div class="alertMsg">${esc(a.message)}</div>
+      <div class="alertAct">
+        ${a.action === 'draft_email' ? `<button class="btn sm b-claim" onclick="runSuggestion('${esc(a.taskId)}','draft_email','alert_fu',event)">✉ Draft</button>` : ''}
+        ${a.action === 'assign' || a.action === 'review' ? `<button class="btn sm b-snooze" onclick="scrollToCard('${esc(a.taskId)}')">View</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Smart action suggestions ──────────────────────────────────────────────
+let activeDraftTaskId = null;
+let activeDraftView   = 'sms';
+
+async function runSuggestion(taskId, action, suggId, e) {
+  if (e) e.stopPropagation();
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  if (action === 'open_url') {
+    const s = task.suggestedActions?.find(x => x.id === suggId);
+    if (s?.url) window.open(s.url, '_blank');
+    return;
+  }
+
+  if (action === 'mark_paid') {
+    markPaid(taskId, e);
+    return;
+  }
+
+  if (action === 'flag_urgent') {
+    const note = prompt('Add a note for Cole (optional):') ?? undefined;
+    if (note === null) return; // cancelled
+    const r = await post('/api/tasks/flag', { taskId, note: note || null });
+    if (r?.ok) toast('🚨 Flagged — Slack message sent to Cole', 'ok');
+    else toast('Flag saved (Slack may be unavailable)', 'warn');
+    return;
+  }
+
+  if (action === 'draft_email') {
+    // draftZone may already exist in tqItem — if not, expand the main card
+    if (!document.getElementById('draftZone-' + taskId)) {
+      expandedId = taskId;
+      renderActive();
+      await new Promise(r => setTimeout(r, 80));
+    }
+    await draftEmail(taskId);
+    return;
+  }
+
+  if (action === 'draft_estimate') {
+    await draftEstimate(taskId);
+    return;
+  }
+}
+
+async function draftEmail(taskId) {
+  const draftZone = document.getElementById('draftZone-' + taskId);
+  if (!draftZone) return;
+  draftZone.style.display = '';
+  draftZone.innerHTML = `<div class="draftLabel">✉ Drafting…</div><div style="color:var(--muted);font-size:13px">Generating draft…</div>`;
+
+  const task = tasks.find(t => t.id === taskId);
+  const waitDays = task?.waitingSince ? (Date.now() - new Date(task.waitingSince).getTime()) / 86400000 : 0;
+  const followUpDay = waitDays < 1.5 ? 1 : waitDays < 3.5 ? 3 : 7;
+
+  try {
+    const r = await post('/api/ai/draft-email', { taskId, followUpDay });
+    if (!r?.ok) { draftZone.innerHTML = `<div style="color:var(--urgent);font-size:13px">Draft failed</div>`; return; }
+    const d = r.draft;
+    activeDraftTaskId = taskId;
+    activeDraftView = 'sms';
+    draftZone.innerHTML = `
+      <div class="draftLabel">✉ Draft ready</div>
+      <div class="draftTab">
+        <button class="draftTabBtn active" id="dtSms-${esc(taskId)}" onclick="switchDraftTab('${esc(taskId)}','sms')">SMS</button>
+        <button class="draftTabBtn" id="dtEmail-${esc(taskId)}" onclick="switchDraftTab('${esc(taskId)}','email')">Email</button>
+      </div>
+      <div id="dtContent-${esc(taskId)}">
+        <div class="draftText" contenteditable="true" id="draftSms-${esc(taskId)}">${esc(d.smsText)}</div>
+      </div>
+      <div style="display:none" id="draftEmailContent-${esc(taskId)}">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Subject</div>
+        <div class="draftText" contenteditable="true" id="draftSubj-${esc(taskId)}" style="margin-bottom:8px;min-height:32px;">${esc(d.emailSubject)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Body</div>
+        <div class="draftText" contenteditable="true" id="draftBody-${esc(taskId)}">${esc(d.emailBody)}</div>
+      </div>
+      <div class="draftActions">
+        <button class="btn sm b-done" onclick="copyDraft('${esc(taskId)}')">Copy</button>
+        <button class="btn sm b-snooze" onclick="closeDraft('${esc(taskId)}')">Close</button>
+      </div>
+    `;
+  } catch { draftZone.innerHTML = `<div style="color:var(--urgent);font-size:13px">Draft error</div>`; }
+}
+
+function switchDraftTab(taskId, view) {
+  document.getElementById('dtSms-' + taskId)?.classList.toggle('active', view === 'sms');
+  document.getElementById('dtEmail-' + taskId)?.classList.toggle('active', view === 'email');
+  const smsContent = document.getElementById('draftSms-' + taskId);
+  const emailContent = document.getElementById('draftEmailContent-' + taskId);
+  if (smsContent) smsContent.parentElement.style.display = view === 'sms' ? '' : 'none';
+  if (emailContent) emailContent.style.display = view === 'email' ? '' : 'none';
+}
+
+function copyDraft(taskId) {
+  const el = document.getElementById('draftSms-' + taskId) || document.getElementById('draftBody-' + taskId);
+  if (el) {
+    navigator.clipboard.writeText(el.innerText || el.textContent).then(() => toast('Copied to clipboard', 'ok'));
+  }
+}
+
+function closeDraft(taskId) {
+  const z = document.getElementById('draftZone-' + taskId);
+  if (z) z.style.display = 'none';
+}
+
+// ── Estimate drafting ─────────────────────────────────────────────────────
+let currentEstDraft = null;
+
+async function draftEstimate(taskId) {
+  const r = await post('/api/ai/draft-estimate', { taskId });
+  if (!r?.ok) { toast('Could not draft estimate', 'err'); return; }
+  currentEstDraft = { ...r.draft, taskId };
+  const task = tasks.find(t => t.id === taskId);
+
+  document.getElementById('estDraftContact').textContent = (task?.contactName || '') + (task?.jobName && task.jobName !== task.contactName ? ' — ' + task.jobName : '');
+  document.getElementById('estDraftTotal').textContent = '$' + Number(r.draft.suggestedTotal).toLocaleString();
+  document.getElementById('estDraftNotes').textContent = r.draft.notes || '';
+  document.getElementById('estDraftLines').innerHTML = r.draft.lineItems.map(li => `
+    <div class="estLineItem">
+      <span class="estLineDesc">${esc(li.description)}</span>
+      <span class="estLineQty">× ${li.quantity} @ $${li.unitPrice}</span>
+      <span class="estLineSub">$${li.subtotal.toLocaleString()}</span>
+    </div>
+  `).join('');
+  document.getElementById('mEstDraft').style.display = '';
+}
+
+async function approveEstDraft() {
+  if (!currentEstDraft) return;
+  // Open GHL to create the estimate (can't auto-create without Cole's approval per SKILL.md)
+  toast('Opening GHL to create estimate — draft is ready', 'ok');
+  window.open('https://app.gohighlevel.com', '_blank');
+  closeModals();
+  currentEstDraft = null;
+}
+
+// ── Briefing panel ────────────────────────────────────────────────────────
+async function loadBriefing() {
+  const card = document.getElementById('briefingCard');
+  if (!card) return;
+  card.style.display = '';
+  const dateEl   = document.getElementById('briefDate');
+  const statsEl  = document.getElementById('briefStats');
+  const urgentEl = document.getElementById('briefUrgent');
+  dateEl.textContent = 'Loading…';
+  statsEl.innerHTML  = '';
+  urgentEl.innerHTML = '';
+  try {
+    const r = await fetch('/api/briefing', { headers: authH() });
+    const d = await r.json();
+    if (!d?.ok) {
+      dateEl.textContent = 'Briefing unavailable';
+      statsEl.innerHTML  = `<span style="color:var(--muted);font-size:12px">${d?.error || 'Could not load briefing data'}</span>`;
+      return;
+    }
+    dateEl.textContent = d.date;
+    statsEl.innerHTML = [
+      { val: '$' + Number(d.pipelineRevenue).toLocaleString(), lbl: 'pipeline' },
+      { val: d.overdueCount,    lbl: 'overdue' },
+      { val: d.followUpsDue,    lbl: 'follow-ups due' },
+      { val: (d.todayEvents || []).length, lbl: 'events today' },
+    ].map(s => `<div class="briefStat"><div class="briefStatVal">${s.val}</div><div class="briefStatLbl">${s.lbl}</div></div>`).join('');
+    urgentEl.innerHTML = (d.urgentTasks || []).slice(0,3).map(t =>
+      `<div class="briefUrgentItem">🔴 ${esc(t.contactName)} — ${esc(t.taskLabel)}${t.amount ? ' · $' + Number(t.amount).toLocaleString() : ''}${t.slaText ? ' · ' + esc(t.slaText) : ''}</div>`
+    ).join('');
+  } catch {
+    dateEl.textContent = 'Briefing unavailable';
+    statsEl.innerHTML  = `<span style="color:var(--muted);font-size:12px">Server error — try refreshing</span>`;
+  }
+}
+
+async function sendBrief() {
+  const btn = document.getElementById('sendBriefBtn');
+  if (btn) { btn.textContent = 'Sending…'; btn.disabled = true; }
+  const r = await post('/api/slack/daily-brief', {});
+  if (r?.ok) toast('Daily brief sent to Slack ✓', 'ok');
+  else toast('Brief send failed', 'err');
+  if (btn) { btn.textContent = 'Slack ↗'; btn.disabled = false; }
+}
+
+// ── Analytics / Funnel ────────────────────────────────────────────────────
+let funnelData = null;
+
+async function loadFunnel() {
+  try {
+    const [rf, rc] = await Promise.all([
+      fetch('/api/analytics/funnel', { headers: authH() }),
+      fetch('/api/tasks?status=cold', { headers: authH() }),
+    ]);
+    const d = await rf.json();
+    const coldD = await rc.json();
+    funnelData = d;
+    if (activeTab === 'analytics') renderFunnel(d, coldD.items || []);
+  } catch {}
+}
+
+function renderFunnel(d, coldItems) {
+  if (!d?.ok) return;
+  const fmt$ = n => '$' + Number(n || 0).toLocaleString();
+  document.getElementById('funnelKpis').innerHTML = [
+    { label: 'Pipeline', value: fmt$(d.totalRevenue), color: 'var(--ok)' },
+    { label: 'Avg Deal', value: fmt$(d.avgDealSize), color: 'var(--text)' },
+    { label: 'Cold $', value: fmt$(d.coldRevenue), color: '#93c5fd' },
+    { label: 'Cold Count', value: d.coldCount || 0, color: '#93c5fd' },
+  ].map(k => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;"><div style="font-size:20px;font-weight:800;color:${k.color}">${k.value}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${k.label}</div></div>`).join('');
+
+  const stages = Object.values(d.byStage || {}).filter(s => s.count > 0 || s.revenue > 0);
+  const maxRev = Math.max(...stages.map(s => s.revenue), 1);
+  document.getElementById('funnelChart').innerHTML = stages.length ? stages.map(s => `
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:160px;font-size:12px;color:var(--muted);flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.label)}</div>
+      <div style="flex:1;height:26px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden;position:relative">
+        <div style="height:100%;width:${Math.max(2,Math.round(s.revenue/maxRev*100))}%;background:linear-gradient(90deg,rgba(255,145,0,.6),rgba(255,145,0,.3));border-radius:4px;transition:width .3s"></div>
+      </div>
+      <div style="width:76px;font-size:12px;font-weight:700;color:var(--ok);text-align:right">${s.revenue ? fmt$(s.revenue) : ''}</div>
+      <div style="width:24px;font-size:11px;color:var(--muted);text-align:right">${s.count}</div>
+    </div>`).join('') : '<div style="color:var(--muted);font-size:13px">No active pipeline.</div>';
+
+  const reasons = {};
+  for (const t of coldItems) { const r2 = t.coldReason || 'untagged'; reasons[r2] = (reasons[r2] || 0) + 1; }
+  const reasonLabels = { no_response:'No response', no_budget:'No budget', competitor:'Competitor', bad_timing:'Bad timing', other:'Other', untagged:'Not tagged' };
+  const maxR = Math.max(...Object.values(reasons), 1);
+  document.getElementById('coldReasonChart').innerHTML = Object.entries(reasons).sort((a,b)=>b[1]-a[1]).map(([k,v]) => `
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:160px;font-size:12px;color:var(--muted);flex-shrink:0;text-align:right">${esc(reasonLabels[k]||k)}</div>
+      <div style="flex:1;height:22px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${Math.round(v/maxR*100)}%;background:rgba(59,130,246,.35);border-radius:4px"></div>
+      </div>
+      <div style="width:24px;font-size:12px;font-weight:700;color:#93c5fd;text-align:right">${v}</div>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:13px">No cold leads tagged yet.</div>';
+}
+
+// ── Access Requests (Admin) ───────────────────────────────────────────────
+async function loadAccessRequests() {
+  try {
+    const r = await fetch('/api/auth/access-requests', { headers: authH() });
+    if (!r.ok) return;
+    const d = await r.json();
+    const el = document.getElementById('accessRequestList');
+    if (!el) return;
+    const requests = d.requests || [];
+    if (!requests.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px">No pending requests.</div>'; return; }
+    el.innerHTML = requests.map(req => `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:8px">
+        <div style="font-size:14px;font-weight:700;color:var(--text)">${esc(req.name)}</div>
+        ${req.reason ? `<div style="font-size:13px;color:var(--muted);margin:4px 0">${esc(req.reason)}</div>` : ''}
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">${new Date(req.requestedAt).toLocaleString()}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn sm b-done" onclick="approveRequest('${esc(req.id)}','onsite')">Approve (Onsite)</button>
+          <button class="btn sm b-claim" onclick="approveRequest('${esc(req.id)}','va')">Approve (Full)</button>
+          <button class="btn sm b-snooze" onclick="denyRequest('${esc(req.id)}')">Deny</button>
+        </div>
+      </div>`).join('');
+  } catch {}
+}
+
+async function approveRequest(requestId, role) {
+  const r = await post('/api/auth/access-requests/approve', { requestId, role });
+  if (r?.ok) {
+    if (r.tempPassword) {
+      alert('✓ Account created for ' + r.name + '\nTemp password: ' + r.tempPassword + '\nShare this with them — they can change it after login.');
+    }
+    toast('Access approved', 'ok');
+    loadAccessRequests();
+  }
+}
+
+async function denyRequest(requestId) {
+  const r = await post('/api/auth/access-requests/deny', { requestId });
+  if (r?.ok) { toast('Request denied', 'ok'); loadAccessRequests(); }
+}
+
+// ── Payroll ───────────────────────────────────────────────────────────────
+async function loadPayroll() {
+  try {
+    const r = await fetch('/api/payroll', { headers: authH() });
+    if (!r.ok) return;
+    const d = await r.json();
+    if (!d?.ok) return;
+    document.getElementById('payrollTotal').textContent = '$' + Number(d.totalPay || 0).toLocaleString();
+    const el = document.getElementById('payrollList');
+    if (!el) return;
+    if (!d.rows?.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px">No event staff records yet.</div>'; return; }
+    const byEvent = {};
+    for (const row of d.rows) {
+      if (!byEvent[row.eventId]) byEvent[row.eventId] = { name: row.eventName, date: row.eventDate, rows: [] };
+      byEvent[row.eventId].rows.push(row);
+    }
+    el.innerHTML = Object.values(byEvent).sort((a,b) => b.date.localeCompare(a.date)).map(ev => `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-weight:700;font-size:14px">${esc(ev.name)}</div>
+          <div style="font-size:12px;color:var(--muted)">${esc(ev.date)}</div>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">
+            <th style="padding:8px 16px;text-align:left;font-weight:700">Staff</th>
+            <th style="padding:8px;text-align:center;font-weight:700">RSVP</th>
+            <th style="padding:8px;text-align:center;font-weight:700">Rate/hr</th>
+            <th style="padding:8px;text-align:center;font-weight:700">Hours</th>
+            <th style="padding:8px 16px;text-align:right;font-weight:700">Pay</th>
+          </tr></thead>
+          <tbody>${ev.rows.map(row => `
+            <tr style="border-top:1px solid rgba(255,255,255,.04);font-size:13px">
+              <td style="padding:10px 16px;color:var(--text)">${esc(row.staffName)}</td>
+              <td style="padding:10px 8px;text-align:center;color:var(--muted)">${row.rsvpStatus === 'accepted' ? '✓' : esc(row.rsvpStatus || '–')}</td>
+              <td style="padding:10px 8px;text-align:center"><input type="number" value="${esc(String(row.hourlyRate||''))}" placeholder="25" style="width:60px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 6px;font-size:12px;text-align:center" onchange="updatePayroll('${esc(row.eventId)}','${esc(row.staffEmail)}','rate',this.value)"></td>
+              <td style="padding:10px 8px;text-align:center"><input type="number" value="${esc(String(row.hoursWorked||''))}" placeholder="8" style="width:50px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 6px;font-size:12px;text-align:center" onchange="updatePayroll('${esc(row.eventId)}','${esc(row.staffEmail)}','hours',this.value)"></td>
+              <td style="padding:10px 16px;text-align:right;font-weight:700;color:${row.totalPay?'var(--ok)':'var(--muted)'}">
+                ${row.totalPay ? '$' + Number(row.totalPay).toLocaleString() : '–'}
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`).join('');
+  } catch {}
+}
+
+async function updatePayroll(eventId, staffEmail, field, value) {
+  const body = { eventId, staffEmail };
+  if (field === 'rate') body.hourlyRate = value;
+  if (field === 'hours') body.hoursWorked = value;
+  await post('/api/payroll/update', body);
+  setTimeout(loadPayroll, 300);
+}
+</script>
+</body>
+</html>
